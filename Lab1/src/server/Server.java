@@ -16,21 +16,27 @@ public class Server{
 	{
 		int numberCounter = 0, letterCounter = 0, dashCounter = 0;
 		
+		if (plate.length() != 8)
+			return false;
 		
 		for (int i = 0; i < plate.length(); i++) {
 			
-			if (plate.charAt(i) >= 'A' && plate.charAt(i) <= 'Z')
-				letterCounter++;
-			
-			else if (plate.charAt(i) >= '0' && plate.charAt(i) <= '9')
-				numberCounter++;
-			
-			else if (plate.charAt(i) == '-')
-				dashCounter++;
-			
+			if (i == 2 || i == 5)
+			{
+				if (plate.charAt(i) == '-')
+					dashCounter++;
+				else
+					return false;
+			}
 			else
-				return false;
-			
+			{
+				if (plate.charAt(i) >= 'A' && plate.charAt(i) <= 'Z')
+					letterCounter++;
+				else if (plate.charAt(i) >= '0' && plate.charAt(i) <= '9')
+					numberCounter++;
+				else
+					return false;
+			}	
 		}
 		
 		return (numberCounter == 4 && letterCounter == 2 && dashCounter == 2);
