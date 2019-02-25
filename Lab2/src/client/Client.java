@@ -63,11 +63,11 @@ public class Client {
 		
 			
 			multicastSocket = new MulticastSocket(port);
-			multicastSocket.setSoTimeout(2000); // 2 second timeout
+			multicastSocket.setSoTimeout(10000); // 10 second timeout
 			multicastSocket.joinGroup(InetAddress.getByName(host));
 
 			byte[] data = new byte[bufferSize];
-			DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(host), port);
+			DatagramPacket packet = new DatagramPacket(data, data.length);
 
 			multicastSocket.receive(packet);
 			
@@ -98,7 +98,7 @@ public class Client {
 			
 			registerySocket = new DatagramSocket();
 			registerySocket.setSoTimeout(2000); // 2 second timeout
-			registerySocket.connect(InetAddress.getByName(host),port);
+			registerySocket.connect(InetAddress.getByName(parts[0]), Integer.parseInt(parts[1]));
 			sendMessage(msg);
 			
 			parts = receiveMessage().split(";");

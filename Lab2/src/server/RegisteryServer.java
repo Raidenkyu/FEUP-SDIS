@@ -111,7 +111,7 @@ public class RegisteryServer implements Runnable {
 					}
 					else {
 						printMessage("Plate not registered");
-						message = -1 + ";" + parts[1] + "ERROR";  
+						message = -1 + ";" + parts[1] + " ERROR";  
 					}
 					
 				}

@@ -12,6 +12,8 @@ public class MulticastServer implements Runnable {
 	int multicastPort;
 	String registeryIP;
 	int registeryPort;
+	
+	int delay = 1500;
 
     public MulticastServer(String multicastIP, int multicastPort, String registeryIP, int registeryPort)
     {
@@ -36,23 +38,28 @@ public class MulticastServer implements Runnable {
 		
 		printMessage("Server is running...\n");
 
-		socket = new DatagramSocket();
-		
-		while (true)
+		try
 		{
-			byte[] data = new String(registeryIP + ":" + registeryPort).getBytes();
+			socket = new DatagramSocket();
+			printMessage("Broadcasting every " + delay/1000 + " seconds\n");
+		
+			while (true)
+			{
+				byte[] data = new String(registeryIP + ":" + registeryPort).getBytes();
 
-			DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(multicastIP), multicastPort);
+				DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(multicastIP), multicastPort);
 
-			socket.send(packet);
+				socket.send(packet);
 
-			printMessage("Registery IP and port broadcasted");
-
-			Thread.sleep(1000);
+				Thread.sleep(2000);
+			}
+			
+		}
+		catch (IOException | InterruptedException e)
+		{
+			e.printStackTrace();
 		}
 		
-
-		socket.close();
 
 	}
 
