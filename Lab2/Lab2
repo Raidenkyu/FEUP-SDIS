@@ -1,0 +1,12 @@
+Servidor:
+    4 argumentos:
+        1- IP do servidor de registo
+        2- Porta do servidor de registo 
+        3- IP do servidor de multicast
+        4- Porta do servidor de multicast
+
+
+Cliente:
+    2 argumentos:
+        1- IP do servidor de multicast
+        2- Porta do servidor de multicast
