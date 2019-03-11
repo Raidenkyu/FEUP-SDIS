@@ -6,13 +6,19 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.TreeMap;
 
-public class Server{
+public class RegisteryServer implements Runnable {
 
-	static int bufferSize = 256;
-	static DatagramSocket socket;
-	static TreeMap<String,String> cars = new TreeMap<String,String>();
+	int bufferSize = 256;
+	DatagramSocket socket;
+    int port;
+	TreeMap<String,String> cars = new TreeMap<String,String>();
+
+    public RegisteryServer(int port)
+    {
+        this.port = port;
+    }
 	
-	private static boolean validPlate(String plate)
+	private boolean validPlate(String plate)
 	{
 		int numberCounter = 0, letterCounter = 0, dashCounter = 0;
 		
@@ -41,13 +47,22 @@ public class Server{
 		
 		return (numberCounter == 4 && letterCounter == 2 && dashCounter == 2);
 	}
+
+    private void printMessage(String message)
+	{
+		System.out.println("[RegisteryServer] " + message);
+	}
+
+    private void printError(String message)
+	{
+		System.err.println("[RegisteryServer] " + message);
+	}
 	
-	public static void main(String[] args) {
+    @Override
+	public void run() {
 		
-		System.out.println("Server is running\n");
-		
-		int port = Integer.parseInt(args[0]);
-		
+		printMessage("Server is running...\n");
+				
 		try {
 			socket = new DatagramSocket(port);
 			
@@ -65,14 +80,14 @@ public class Server{
 				
 				if (!validPlate(parts[1])) {
 					
-					System.err.println("Invalid plate");
+					printError("Invalid plate");
 				}
 					
 				
 				for (int i = 0; i < parts.length; i++)
 					printMessage += parts[i] + " ";
 				
-				System.out.println(printMessage);
+				printMessage(printMessage);
 				
 				if (parts[0].equals("register")) {
 					
@@ -82,7 +97,7 @@ public class Server{
 						message = cars.size() + ";" + parts[1] + ";" +  parts[2];  
 					}
 					else {
-						System.out.println("Plate already registered");
+						printMessage("Plate already registered");
 						message = -1 + ";" + parts[1] + ";" + parts[2];
 					}
 					
@@ -95,13 +110,13 @@ public class Server{
 						message = cars.size() + ";" + parts[1] + ";" + name;  
 					}
 					else {
-						System.out.println("Plate not registered");
-						message = -1 + ";" + parts[1] + "ERROR";  
+						printMessage("Plate not registered");
+						message = -1 + ";" + parts[1] + " ERROR";  
 					}
 					
 				}
 				else {
-					System.out.println("Invalid Message");
+					printMessage("Invalid Message");
 					message = -1 + ";" + parts[1] + ";" + parts[2];  
 				}
 				
