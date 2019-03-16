@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Peer",
+            "request": "launch",
+            "mainClass": "peer.Peer"
+        }
+    ]
+}
