@@ -25,9 +25,10 @@ public class Worker implements Runnable, PeerRMI
 {
     public String task;
     public Object[] args;
+
     public Peer parent = null;
 
-    public Worker(String task, Object[] args, Peer parent) 
+    public Worker(String task, Object[] args, Peer peer) 
     {
         this.task = task;
 
@@ -37,7 +38,7 @@ public class Worker implements Runnable, PeerRMI
             this.args[i] = args[i];
         }
 
-        this.parent = parent;
+        this.parent = peer;
     }
 
     @Override
@@ -93,7 +94,8 @@ public class Worker implements Runnable, PeerRMI
             chunks.add(new Chunk(buffer, i, numChunks, "id"));
         }
 
-        for (int i = 0; i < peers.size() && i < replicationDegree; i++)
+        int sent = 0;
+        for (int i = 0; i < peers.size(); i++)
         {
             // Send chunk to peers
         }
