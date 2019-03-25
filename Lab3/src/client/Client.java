@@ -12,7 +12,7 @@ public class Client {
 		String response = "";
 
 		try {
-			Registry registry = LocateRegistry.getRegistry(null);
+			Registry registry = LocateRegistry.getRegistry("10.227.161.159");
 			ServerRegistry stub = (ServerRegistry) registry.lookup("ServerRegistry");
 			if (op.equals("register")) {
 				String owner = args[2];

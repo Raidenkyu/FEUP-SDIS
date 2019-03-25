@@ -17,6 +17,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Remote;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import peer.Chunk;
 
 public class Peer implements PeerRMI
@@ -24,20 +26,27 @@ public class Peer implements PeerRMI
     static int id = 0;
     static int port = 8080;
     static String multicastGroup = "225.0.0.0";
-    static int chunkSize = 100;
+    static MulticastSocket socket;
 
+    static int chunkSize = 100;
     static ArrayList<Chunk> chunks;
 
     static ArrayList<String> peers;
 
+    static ThreadPoolExecutor pool;
+
+    private static final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+
+
     public static void main(String[] args)
     {
-
+        initChannels();
+        initPool();
         try
-        {   
+        {
             chunks = new ArrayList<Chunk>();
 
-            MulticastSocket socket = new MulticastSocket(port);
+            socket = new MulticastSocket(port);
 
             socket.setSoTimeout(2*1000); // 2 second timeout
             socket.joinGroup(InetAddress.getByName(multicastGroup));
@@ -48,6 +57,10 @@ public class Peer implements PeerRMI
                 DatagramPacket packet = new DatagramPacket(data, data.length);
 
                 socket.receive(packet);
+
+                String message = new String(packet.getData()).trim();
+
+
             }
 
         }
@@ -103,6 +116,18 @@ public class Peer implements PeerRMI
 
     public void state() {
         
+    }
+
+    public static void initChannels(){
+        Thread dataChannel = new Thread(new ChannelListener("MDB", "225.0.0.0"), "MDB");
+        Thread controlChannel = new Thread(new ChannelListener("MC", "226.0.0.0"), "MC");
+        Thread recoveryChannel = new Thread(new ChannelListener("MDR", "227.0.0.0"), "MDR");
+
+        controlChannel.start();
+    }
+
+    public static void initPool(){
+        pool = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
     }
 
 }

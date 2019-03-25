@@ -11,7 +11,9 @@ CLIENTCLASSES = \
 
 SERVERCLASSES = \
 	src/peer/Chunk.java \
-    src/peer/Peer.java
+    src/peer/Peer.java \
+	src/peer/Worker.java \
+	src/peer/ChannelListener.java
  
 default: classes
  
