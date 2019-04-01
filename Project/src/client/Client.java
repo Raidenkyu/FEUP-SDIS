@@ -56,12 +56,11 @@ class Client {
 
     static void backup(String filename, int replicationDegree) {
 
-        File file = new File(filename);
-        byte[] mydata = new byte[(int) file.length()];
-        FileInputStream in = new FileInputStream(file);
-        System.out.println("uploading to server...");
-        in.read(mydata, 0, mydata.length);
-        stub.backup(mydata, filename, (int) file.length(), replicationDegree);
+        
+        
+        
+
+        stub.backup(filename, (int) file.length(), replicationDegree);
         in.close();
     }
 

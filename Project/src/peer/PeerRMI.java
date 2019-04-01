@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 interface PeerRMI extends Remote {
 
-    public void backup(byte[] data, String filename, int size, int degree) throws RemoteException;
+    public void backup(String filename, int size, int degree) throws RemoteException;
 
     public void restore() throws RemoteException;
 

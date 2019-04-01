@@ -5,21 +5,20 @@ public class Chunk
     byte[] data;
 
     int index;
-    int totalChunks;
 
-    String filename;
+    String FileId;
     int replicationDegree;
 
-    public Chunk(byte[] data, int index, int totalChunks, String filename)
+    public Chunk(byte[] data, int index, String FileId, int replicationDegree)
     {
         this.data = data;
         this.index = index;
-        this.totalChunks = totalChunks;
-        this.filename = filename;
+        this.FileId = FileId;
+        this.replicationDegree = replicationDegree;
     }
 
     public boolean equals(Chunk chunk)
     {
-        return (this.index == chunk.index && this.totalChunks == chunk.totalChunks && this.filename.equals(chunk.filename));
+        return (this.index == chunk.index && this.FileId.equals(chunk.FileId));
     }
 }

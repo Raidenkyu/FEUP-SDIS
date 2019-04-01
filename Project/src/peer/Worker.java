@@ -19,86 +19,92 @@ import java.rmi.Remote;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.security.MessageDigest;
+
 import peer.Chunk;
 
-public class Worker implements Runnable, PeerRMI
-{
+public class Worker implements Runnable{
     public String task;
     public Object[] args;
 
     public Peer parent = null;
+    int chunkSize;
 
-    public Worker(String task, Object[] args, Peer peer) 
-    {
+    public Worker(String task, Object[] args, Peer peer) {
         this.task = task;
 
         this.args = new Object[args.length];
-        for (int i = 0; i < args.length; i++)
-        {
+        for (int i = 0; i < args.length; i++) {
             this.args[i] = args[i];
         }
 
         this.parent = peer;
+        this.chunkSize = Peer.chunkSize;
     }
 
     @Override
-    public void run()
-    {
-        if (task.equals("backup"))
-        {
-            byte[] data = (byte[]) args[0];
-            String filename = (String) args[1];
-            Integer size = (Integer) args[2];
-            Integer replicationDegree = (Integer) args[3];
+    public void run() {
+        if (task.equals("backup")) {
+            String filename = (String)args[0];
+            int size = (Integer)args[1];
+            int replicationDegree = (Integer) args[3];
+            File file = new File(filename);
+            byte[] data = new byte[(int) file.length()];
+            FileInputStream in = new FileInputStream(file);
+            System.out.println("uploading to server...");
+            in.read(data, 0, data.length);
 
             backup(data, filename, size, replicationDegree);
-        }
-        else if (task.equals("delete"))
-        {
+            in.close();
+        } else if (task.equals("delete")) {
 
-        }
-        else if (task.equals("restore"))
-        {
+        } else if (task.equals("restore")) {
 
-        }
-        else if (task.equals("reclaim"))
-        {
-            
-        }
-        else
-        {
+        } else if (task.equals("reclaim")) {
+
+        } else {
             System.out.println("Wrong task!");
             System.exit(-1);
         }
     }
 
-    public void backup(byte[] data, String filename, int size, int replicationDegree)
-    {
+    public void backup(byte[] data, String filename, int size, int replicationDegree) {
         byte[] buffer;
         int bytesRead;
-        int numChunks = (int)Math.ceil((double)data.length/chunkSize);
+        int numChunks = (int) Math.ceil((double) data.length / chunkSize);
+        int senderId = Peer.id;
+        String version = Peer.version;
 
-        for (int i = 0; i < numChunks; i++)
-        {
-            int bufSize = data.length - i*chunkSize;
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(filename.getBytes());
+        String fileId = new String(encodedhash);
+        String CRLF = "\r\n";
+
+        for (int i = 0; i < numChunks; i++) {
+            int bufSize = data.length - i * chunkSize;
             if (bufSize > chunkSize)
                 bufSize = chunkSize;
 
             buffer = new byte[bufSize];
 
-            for (int j = 0; j < chunkSize; j++)
-            {
-                buffer[j] = data[i*chunkSize + j];
+            for (int j = 0; j < chunkSize; j++) {
+                buffer[j] = data[i * chunkSize + j];
             }
-
-            chunks.add(new Chunk(buffer, i, numChunks, "id"));
+            String body = new String(buffer);
+            String msg = "PUTCHUNCK" + version + senderId + i + CRLF+ CRLF + body;
+            System.out.println(msg);
+            //peer.channels.get("MDB").send();
         }
 
-        int sent = 0;
-        for (int i = 0; i < peers.size(); i++)
+        
+        int stored = 0;
+
+        while (stored < replicationDegree)
         {
-            // Send chunk to peers
+            String response = Peer.channels.get("MC").messageQueue.poll();
         }
+
+        
     }
 
     public void restore() {
@@ -110,10 +116,10 @@ public class Worker implements Runnable, PeerRMI
     }
 
     public void reclaim() {
-        
+
     }
 
     public void state() {
-        
+
     }
 }

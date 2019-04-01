@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+
 import java.util.ArrayList;
 import java.io.File;
 import java.io.DataInputStream;
@@ -21,12 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 
+import java.util.Enumeration;
+
 import peer.Chunk;
 
 public class Peer implements PeerRMI
 {
     static Peer instance = new Peer();
     static int id = 0;
+    static String version = "1.0";
 
     static int chunkSize = 100;
     static ArrayList<Chunk> chunks;
@@ -49,35 +54,11 @@ public class Peer implements PeerRMI
     }
 
 
-    public void backup(byte[] data, String filename, int size, int replicationDegree)
+    public void backup(String filename, int size, int replicationDegree)
     {
-        byte[] buffer;
-        int bytesRead;
-        int numChunks = (int)Math.ceil((double)data.length/chunkSize);
-
-        for (int i = 0; i < numChunks; i++)
-        {
-            int bufSize = data.length - i*chunkSize;
-            if (bufSize > chunkSize)
-                bufSize = chunkSize;
-
-            buffer = new byte[bufSize];
-
-            for (int j = 0; j < chunkSize; j++)
-            {
-                buffer[j] = data[i*chunkSize + j];
-            }
-
-            chunks.add(new Chunk(buffer, i, numChunks, "id"));
-        }
-
-        int sent = 0;
-        for (int i = 0; i < peers.size() && sent < replicationDegree; i++)
-        {
-            // Send chunk to peers
-
-            
-        }
+        Object[] args = {filename,size,replicationDegree};
+        Thread dataChannel = new Thread(new Worker("backup",args,instance),"Backup");
+        pool.execute(dataChannel);
     }
 
     public void restore() {
@@ -97,19 +78,22 @@ public class Peer implements PeerRMI
     }
 
     public static void initChannels(){
-        Thread dataChannel = new Thread(new PeerChannel("MDB", "225.0.0.0",instance), "MDB");
-        Thread controlChannel = new Thread(new PeerChannel("MC", "226.0.0.0",instance), "MC");
-        Thread recoveryChannel = new Thread(new PeerChannel("MDR", "227.0.0.0",instance), "MDR");
+        PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0",instance);
+        PeerChannel MC = new PeerChannel("MC", "226.0.0.0",instance);
+        PeerChannel MDR = new PeerChannel("MDR", "227.0.0.0",instance);
+        Thread dataChannel = new Thread(MDB, "MDB");
+        Thread controlChannel = new Thread(MC, "MC");
+        Thread recoveryChannel = new Thread(MDR, "MDR");
 
         dataChannel.start();
         controlChannel.start();
         recoveryChannel.start();
 
-        channels = new ConcurrentHashMap<String, String>();
+        channels = new ConcurrentHashMap<String, PeerChannel>();
 
-        channels.put(dataChannel.id, dataChannel);
-        channels.put(controlChannel.id, controlChannel);
-        channels.put(recoveryChannel.id, recoveryChannel);
+        channels.put(MDB.id, MDB);
+        channels.put(MC.id, MC);
+        channels.put(MDR.id, MDR);
 
     }
 
@@ -121,5 +105,6 @@ public class Peer implements PeerRMI
     public static ConcurrentHashMap<String, String> getMap(){
         return map;
     }
+
 
 }

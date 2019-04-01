@@ -5,6 +5,14 @@ import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.net.InetAddress;
+import java.net.InetSocketAddress; 
+
+import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import java.net.DatagramPacket;
+
+import java.net.SocketException;
 
 public class PeerChannel implements Runnable {
     String id = "";
@@ -12,8 +20,9 @@ public class PeerChannel implements Runnable {
     int port = 8080;
     String multicastGroup = "";
 
-    Peer parent = null;
+    ConcurrentLinkedQueue<String> messageQueue = new ConcurrentLinkedQueue<String>();
 
+    Peer parent = null;
     // Peer parent = Peer;
 
     public PeerChannel(String id, String multicastGroup, Peer peer) {
@@ -49,7 +58,7 @@ public class PeerChannel implements Runnable {
 
             if (id.equals("MDB"))
             {
-                this.MDBListener(message, packet.getSocketAddress());
+                this.MDBListener(message, packet.getHostName());
             }
             else if (id.equals("MC"))
             {
@@ -67,11 +76,22 @@ public class PeerChannel implements Runnable {
 
     }
 
-    void MDBListener(String msg, InetAddress IP){
+    void MDBListener(String msg, String IP){
         String[] args = msg.split("/s+");
 
         if (args[0].equals("PUTCHUNK"))
         {
+            int SenderId = Integer.parseInt(args[2]); 
+
+            if (peer.id == SenderId) // Initiator peer doesn't store its own files
+                return;
+
+            String fileId = (String)args[3];
+            int Chunkno = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
+            byte[] data = msg.substring(msg.lastIndexOf("\r\n")+2).getBytes();
+
+            eer.chunks.add(new Chunk(data, Chunkno, fileId, ReplicationDeg));
+
             String response = "";
 
             response += "STORED ";
@@ -81,17 +101,23 @@ public class PeerChannel implements Runnable {
             response += args[4] + " ";
             response += "\r\n\r\n";
 
-            DatagramPacket packet = new DatagramPacket(port, )
+            Random random = new Random(Instant.now().toEpochMilli());
+            int delay = (random.nextGaussian() + 1)/2 * 400;
 
-            peer.channels.get("MC").send(response);
-
+            Thread.sleep(delay);
+            
+            Peer.channels.get("MC").send(response);
         }
             
     }
 
     void MCListener(String msg){
+        String[] args = msg.split("/s+");
 
-
+        if (args[0].equals("STORED"))
+        {
+            messageQueue.add(msg);
+        }
             
     }
 
@@ -102,9 +128,13 @@ public class PeerChannel implements Runnable {
     }
 
 
-    protected void send(String message, String IP)
+    protected void send(String message)
     {
-        socket
+        byte[] data = message.getBytes();
+        DatagramPacket packet = new DatagramPacket(data, data.length);
+        
+        socket.send(packet);
     }
+
     
 }
