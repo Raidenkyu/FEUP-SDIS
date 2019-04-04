@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.net.DatagramPacket;
 
@@ -23,7 +24,9 @@ public class PeerChannel implements Runnable {
     int port = 8080;
     String multicastGroup = "";
 
-    ConcurrentLinkedQueue<String> messageQueue = new ConcurrentLinkedQueue<String>();
+    private static final String CRLF = "\r\n";
+
+    ConcurrentHashMap<Integer, ConcurrentLinkedQueue<String>> messageQueue = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<String>>();
 
     Peer peer = null;
     // Peer parent = Peer;
@@ -37,7 +40,7 @@ public class PeerChannel implements Runnable {
     public void connect() {
         try {
             socket = new MulticastSocket(port);
-            //socket.setSoTimeout(2 * 1000); // 2 second timeout
+            // socket.setSoTimeout(2 * 1000); // 2 second timeout
             socket.joinGroup(InetAddress.getByName(multicastGroup));
         } catch (IOException e) {
             e.printStackTrace();
@@ -74,7 +77,7 @@ public class PeerChannel implements Runnable {
     }
 
     void MDBListener(String msg, String IP) {
-        String[] args = msg.split("/s+");
+        String[] args = msg.split(" +");
 
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
@@ -95,7 +98,7 @@ public class PeerChannel implements Runnable {
             response += args[2] + " ";
             response += args[3] + " ";
             response += args[4] + " ";
-            response += "\r\n\r\n";
+            response += CRLF + CRLF;
 
             Random random = new Random(Instant.now().toEpochMilli());
             int delay = (int) Math.round((random.nextGaussian() + 1) / 2 * 400);
@@ -104,18 +107,17 @@ public class PeerChannel implements Runnable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            
 
-            peer.channels.get("MC").send(response);
+            peer.channels.get("MC").send(response.getBytes());
         }
 
     }
 
     void MCListener(String msg) {
-        String[] args = msg.split("/s+");
+        String[] args = msg.split(" +");
 
         if (args[0].equals("STORED")) {
-            messageQueue.add(msg);
+            queueMessage(peer.id, msg);
         }
 
     }
@@ -124,9 +126,9 @@ public class PeerChannel implements Runnable {
 
     }
 
-    protected void send(String message) {
-        byte[] data = message.getBytes();
+    protected void send(byte[] data) {
         DatagramPacket packet = new DatagramPacket(data, data.length);
+
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -134,5 +136,40 @@ public class PeerChannel implements Runnable {
         }
 
     }
+
+    private void queueMessage(Integer id, String message) {
+        ConcurrentLinkedQueue<String> singleQueue = messageQueue.get(id);
+
+        if (singleQueue == null) {
+            singleQueue = new ConcurrentLinkedQueue<String>();
+            messageQueue.put(id, singleQueue);
+        }
+
+        singleQueue.add(message);
+    }
+
+    public String popMessage(Integer id)
+    {
+        ConcurrentLinkedQueue<String> singleQueue = messageQueue.get(id);
+
+        if (singleQueue != null)
+        {
+            return singleQueue.poll();
+        }
+
+        return null;
+    }
+
+
+    private void parseHeader(byte[] packetData){
+        String msg = new String(packetData);
+        String header = msg.substring(0,msg.indexOf(CRLF));
+        System.out.println(header);
+    }
+
+    private void parseChunk(byte[] packetData){
+
+    }
+
 
 }

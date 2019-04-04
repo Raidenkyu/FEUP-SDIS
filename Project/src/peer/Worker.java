@@ -71,11 +71,9 @@ public class Worker implements Runnable {
         byte[] buffer;
         int bytesRead;
         int numChunks = (int) Math.ceil((double) data.length / chunkSize);
-        int senderId = peer.id;
-        String version = peer.version;
 
-        String fileId = this.encrypt(filename);
-        String CRLF = "\r\n";
+        String fileId = this.encrypt(data);
+
 
         for (int i = 0; i < numChunks; i++) {
             int bufSize = data.length - i * chunkSize;
@@ -87,16 +85,19 @@ public class Worker implements Runnable {
             for (int j = 0; j < bufSize; j++) {
                 buffer[j] = data[i * chunkSize + j];
             }
-            String body = new String(buffer);
-            String msg = "PUTCHUNCK" + version + senderId + i + CRLF + CRLF + body;
-            System.out.println(msg);
-            // peer.channels.get("MDB").send();
+            Chunk chunk = new Chunk(buffer,i,fileId,replicationDegree);
+            String header = makeHeader("PUTCHUNK", chunk);
+            byte[] msg = makeMsg(header, chunk);
+            peer.channels.get("MDB").send(msg);
         }
 
         int stored = 0;
 
         while (stored < replicationDegree) {
-            String response = peer.channels.get("MC").messageQueue.poll();
+            String response = peer.channels.get("MC").popMessage(peer.id);
+
+            
+
         }
 
     }
@@ -144,6 +145,44 @@ public class Worker implements Runnable {
         }
 
         return null;
+    }
+
+    private String encrypt(byte[] data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedhash = digest.digest(data);
+            String fileId = new String(encodedhash);
+            return fileId;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+
+    private byte[] makeMsg(String header, Chunk chunk) {
+        byte[] headerBytes = header.getBytes();
+        byte[] chunkBytes = chunk.data;
+        byte[] msg = new byte[headerBytes.length + chunkBytes.length];
+        System.arraycopy(headerBytes, 0, msg, 0, headerBytes.length);
+        System.arraycopy(chunkBytes, 0, msg, headerBytes.length, chunkBytes.length);
+
+        return msg;
+    }
+
+    private String makeHeader(String op, Chunk chunk){
+        String CRLF = "\r\n";
+        String header = "PUTCHUNK";  
+		header += " " + this.peer.version; 
+		header += " " + this.peer.id;
+		header += " " + chunk.fileId;
+		header += " " + chunk.index;
+		header += " " + chunk.replicationDegree;
+        header += " " + CRLF + CRLF;
+                        
+        return header;
     }
 
 }

@@ -8,9 +8,12 @@ import java.net.NetworkInterface;
 
 import java.util.ArrayList;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.DataInputStream;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -41,6 +44,8 @@ public class Peer implements PeerRMI
     ThreadPoolExecutor pool;
 
     ConcurrentHashMap<String, PeerChannel> channels;
+
+    Path chunkPath = Paths.get(".");
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
@@ -128,4 +133,24 @@ public class Peer implements PeerRMI
     }
 
 
+    private void retrieveChunksFromFiles()
+    {
+
+        // try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(directory)) {
+        //     for (Path child : ds) {
+        //         all.add(child);
+        //         if (Files.isDirectory(child)) {
+        //             addTree(child, all);
+        //         }
+        //     }
+        // }
+    }
+
+    private void storeChunk(Chunk chunk)
+    {
+
+        // try (FileOutputStream stream = new FileOutputStream(path)) {
+        //     stream.write(bytes);
+        // }
+    }
 }

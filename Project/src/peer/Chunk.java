@@ -6,19 +6,19 @@ public class Chunk
 
     int index;
 
-    String FileId;
+    String fileId;
     int replicationDegree;
 
-    public Chunk(byte[] data, int index, String FileId, int replicationDegree)
+    public Chunk(byte[] data, int index, String fileId, int replicationDegree)
     {
         this.data = data;
         this.index = index;
-        this.FileId = FileId;
+        this.fileId = fileId;
         this.replicationDegree = replicationDegree;
     }
 
     public boolean equals(Chunk chunk)
     {
-        return (this.index == chunk.index && this.FileId.equals(chunk.FileId));
+        return (this.index == chunk.index && this.fileId.equals(chunk.fileId));
     }
 }
