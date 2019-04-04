@@ -47,7 +47,7 @@ public class Worker implements Runnable {
     public void run() {
         if (task.equals("backup")) {
             String filename = (String) args[0];
-            int replicationDegree = (Integer) args[3];
+            int replicationDegree = (Integer) args[1];
             byte data[] = this.getFileData(filename);
             System.out.println("uploading to server...");
 
@@ -84,7 +84,7 @@ public class Worker implements Runnable {
 
             buffer = new byte[bufSize];
 
-            for (int j = 0; j < chunkSize; j++) {
+            for (int j = 0; j < bufSize; j++) {
                 buffer[j] = data[i * chunkSize + j];
             }
             String body = new String(buffer);
