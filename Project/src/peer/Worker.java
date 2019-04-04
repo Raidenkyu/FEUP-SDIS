@@ -88,6 +88,7 @@ public class Worker implements Runnable {
             Chunk chunk = new Chunk(buffer,i,fileId,replicationDegree);
             String header = makeHeader("PUTCHUNK", chunk);
             byte[] msg = makeMsg(header, chunk);
+            System.out.println("Msg Size: " + msg.length);
             peer.channels.get("MDB").send(msg);
         }
 
@@ -133,19 +134,7 @@ public class Worker implements Runnable {
         }
         return null;
     }
-
-    private String encrypt(String filename) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] encodedhash = digest.digest(filename.getBytes());
-            String fileId = new String(encodedhash);
-            return fileId;
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
+    
 
     private String encrypt(byte[] data) {
         try {

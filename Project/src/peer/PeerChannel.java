@@ -18,6 +18,9 @@ import java.net.SocketException;
 import java.time.Instant;
 import java.lang.Math;
 
+import java.util.Arrays;
+
+
 public class PeerChannel implements Runnable {
     String id = "";
     MulticastSocket socket;
@@ -61,14 +64,14 @@ public class PeerChannel implements Runnable {
                 e.printStackTrace();
             }
 
-            String message = new String(packet.getData()).trim();
+            byte[] packetData = packet.getData();
 
             if (id.equals("MDB")) {
-                this.MDBListener(message, packet.getAddress().getHostName());
+                this.MDBListener(packetData, packet.getAddress().getHostName());
             } else if (id.equals("MC")) {
-                this.MCListener(message);
+                this.MCListener(packetData);
             } else if (id.equals("MDR")) {
-                this.MDRListener(message);
+                this.MDRListener(packetData);
             } else {
                 System.err.println("Wrong PeerChannel ID!");
             }
@@ -76,8 +79,10 @@ public class PeerChannel implements Runnable {
 
     }
 
-    void MDBListener(String msg, String IP) {
-        String[] args = msg.split(" +");
+    void MDBListener(byte[] packetData, String IP) {
+        String header = this.parseHeader(packetData);
+       
+        String[] args = header.trim().split(" +");
 
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
@@ -87,8 +92,7 @@ public class PeerChannel implements Runnable {
 
             String fileId = (String) args[3];
             int Chunkno = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
-            byte[] data = msg.substring(msg.lastIndexOf("\r\n") + 2).getBytes();
-
+            byte[] data = this.parseChunk(packetData);
             peer.chunks.add(new Chunk(data, Chunkno, fileId, ReplicationDeg));
 
             String response = "";
@@ -99,7 +103,7 @@ public class PeerChannel implements Runnable {
             response += args[3] + " ";
             response += args[4] + " ";
             response += CRLF + CRLF;
-
+            
             Random random = new Random(Instant.now().toEpochMilli());
             int delay = (int) Math.round((random.nextGaussian() + 1) / 2 * 400);
             try {
@@ -113,16 +117,17 @@ public class PeerChannel implements Runnable {
 
     }
 
-    void MCListener(String msg) {
-        String[] args = msg.split(" +");
-
+    void MCListener(byte[] packetData) {
+        
+        String msg = new String(packetData);
+        String[] args = msg.trim().split(" +");
         if (args[0].equals("STORED")) {
             queueMessage(peer.id, msg);
         }
 
     }
 
-    void MDRListener(String msg) {
+    void MDRListener(byte[] packetData) {
 
     }
 
@@ -161,14 +166,19 @@ public class PeerChannel implements Runnable {
     }
 
 
-    private void parseHeader(byte[] packetData){
+    private String parseHeader(byte[] packetData){
         String msg = new String(packetData);
         String header = msg.substring(0,msg.indexOf(CRLF));
         System.out.println(header);
+        return header;
     }
 
-    private void parseChunk(byte[] packetData){
-
+    private byte[] parseChunk(byte[] packetData){
+        String msg = new String(packetData);
+        int dataIndex = msg.indexOf(CRLF);
+        dataIndex += 2*CRLF.length();
+        byte[] chunkData = Arrays.copyOfRange(packetData, dataIndex, packetData.length);
+        return chunkData;
     }
 
 
