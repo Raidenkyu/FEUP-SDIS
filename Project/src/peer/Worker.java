@@ -69,7 +69,6 @@ public class Worker implements Runnable {
 
     public void backup(byte[] data, String filename, int replicationDegree) {
         byte[] buffer;
-        int bytesRead;
         int numChunks = (int) Math.ceil((double) data.length / chunkSize);
 
         String fileId = this.encrypt(data);

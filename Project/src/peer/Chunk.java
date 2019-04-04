@@ -21,4 +21,15 @@ public class Chunk
     {
         return (this.index == chunk.index && this.fileId.equals(chunk.fileId));
     }
+
+    @Override
+    public String toString()
+    {
+    	int limit = fileId.length();
+    	
+    	if (limit > 15)
+    		limit = 15;
+    	
+        return (fileId.substring(0, limit) + "-" + index);
+    }
 }

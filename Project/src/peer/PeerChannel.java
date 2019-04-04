@@ -38,6 +38,8 @@ public class PeerChannel implements Runnable {
         this.id = id;
         this.multicastGroup = multicastGroup;
         this.peer = peer;
+        
+        this.connect();
     }
 
     public void connect() {
@@ -132,9 +134,10 @@ public class PeerChannel implements Runnable {
     }
 
     protected void send(byte[] data) {
-        DatagramPacket packet = new DatagramPacket(data, data.length);
 
         try {
+            DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName(multicastGroup), port);
+
             socket.send(packet);
         } catch (IOException e) {
             e.printStackTrace();

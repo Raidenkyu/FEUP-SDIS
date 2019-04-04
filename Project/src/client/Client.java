@@ -12,6 +12,7 @@ class Client {
     public static void main(String args[]) {
         if (args.length < 2) {
             System.out.println("Invalid Number of arguments");
+            System.exit(1);
         }
 
         locatePeer(args[0]);

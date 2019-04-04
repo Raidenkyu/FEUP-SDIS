@@ -51,26 +51,25 @@ public class Peer implements PeerRMI
 
     ConcurrentHashMap<String, PeerChannel> channels;
 
-    Path chunkPath = Paths.get(".");
+    Path chunkPath = Paths.get("");
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
     public Peer(String id){
 
-        this.chunks = new ArrayList<Chunk>();
-        this.id = Integer.parseInt(id);
-        retrieveChunksFromFiles();
+		this.chunks = new ArrayList<Chunk>();
+		this.id = Integer.parseInt(id);
+		retrieveChunksFromFiles();
 
-        this.initPool();
-        this.initChannels();
-        this.initRMI();
+		this.initPool();
+		this.initChannels();
+		this.initRMI();
 
         }
 
     public static void main(String[] args)
     {
         instance = new Peer(args[0]);
-
     }
 
 
@@ -151,8 +150,10 @@ public class Peer implements PeerRMI
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(chunkPath)) {
             for (Path child : dirStream) {
                 
-                String pathStr = child.toString();
-                pathStr = pathStr.substring(pathStr.lastIndexOf("/"));
+                String pathStr = child.toString();                
+                int pos = pathStr.lastIndexOf('\\');
+                if (pos != -1)
+                	pathStr = pathStr.substring(pos+1);
 
                 if (Files.isDirectory(child) && pathStr.matches("peer"+id))
                 {
@@ -160,7 +161,9 @@ public class Peer implements PeerRMI
                         for (Path child2 : dirStream2) {
 
                             pathStr = child2.toString();
-                            pathStr = pathStr.substring(pathStr.lastIndexOf("/"));
+                            pos = pathStr.lastIndexOf('\\');
+                            if (pos != -1)
+                            	pathStr = pathStr.substring(pos+1);
 
                             if (Files.isDirectory(child2) && pathStr.matches("backup")) 
                             {
@@ -169,47 +172,40 @@ public class Peer implements PeerRMI
                                     for (Path child3 : dirStream3) {
 
                                         pathStr = child3.toString();
-                                        pathStr = pathStr.substring(pathStr.lastIndexOf("/"));
+                                        pos = pathStr.lastIndexOf('\\');
+                                        if (pos != -1)
+                                        	pathStr = pathStr.substring(pos+1);
 
-                                        if (Files.isDirectory(child3) && pathStr.matches("backup")) 
+                                        fileId = pathStr;
+
+                                        if (Files.isDirectory(child3)) 
                                         {
                                             try (DirectoryStream<Path> dirStream4 = Files.newDirectoryStream(child3)) {
                                                 for (Path child4 : dirStream4) {
+                                                    pathStr = child4.toString();
+                                                    pos = pathStr.lastIndexOf('\\');
+                                                    if (pos != -1)
+                                                    	pathStr = pathStr.substring(pos+1);
 
-                                                    pathStr = child3.toString();
-                                                    pathStr = pathStr.substring(pathStr.lastIndexOf("/"));
-                                                    fileId = pathStr;
+                                                    if (pathStr.matches("chk[0-9]+")) {
 
-                                                    if (Files.isDirectory(child4)) 
-                                                    {
-                                                        try (DirectoryStream<Path> dirStream5 = Files.newDirectoryStream(child4)) {
-                                                            for (Path child5 : dirStream5) {
-                                                                System.out.println("im here");
+                                                        chunkIndex = Integer.parseInt(pathStr.substring(3));
 
-                                                                pathStr = child5.toString();
-                                                                pathStr = pathStr.substring(pathStr.lastIndexOf("/"));
+                                                        try {
+                                                            File file = new File(child4.toString());
+                                                            FileInputStream in = new FileInputStream(file);
+                                                            byte[] data = new byte[(int) file.length()];
+                                                            in.read(data, 0, data.length);
+                                                            in.close();
+                                                            
+                                                            Chunk chunk = new Chunk(data, chunkIndex, fileId, 1);
+                                                            
+                                                            chunks.add(chunk);
 
-                                                                if (Files.isDirectory(child5) && pathStr.matches("chk[0-9]+")) {
+                                                            System.out.println("Added chunk: " + chunk);
 
-                                                                    Matcher m = Pattern.compile("[0-9]").matcher(pathStr);
-                                                                    chunkIndex = Integer.parseInt(pathStr.substring(m.start()));
-
-                                                                    try {
-                                                                        File file = new File(child5.toString());
-                                                                        FileInputStream in = new FileInputStream(file);
-                                                                        byte[] data = new byte[(int) file.length()];
-                                                                        in.read(data, 0, data.length);
-                                                                        in.close();
-
-                                                                        chunks.add(new Chunk(data, chunkIndex, fileId, 1));
-
-                                                                        System.out.println("Added chunk with id: " + chunkIndex);
-
-                                                                    } catch (IOException e) {
-                                                                        e.printStackTrace();
-                                                                    }
-                                                                }
-                                                            }
+                                                        } catch (IOException e) {
+                                                            e.printStackTrace();
                                                         }
                                                     }
                                                 }
@@ -221,9 +217,10 @@ public class Peer implements PeerRMI
                         }
                     }
                 }
+
+//                System.out.println(child);
             }
 
-            System.out.println(child);
         }
         catch (IOException e)
         {
