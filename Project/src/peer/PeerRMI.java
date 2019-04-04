@@ -3,7 +3,7 @@ package peer;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-interface PeerRMI extends Remote {
+public interface PeerRMI extends Remote {
 
     public void backup(String filename, int degree) throws RemoteException;
 

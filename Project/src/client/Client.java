@@ -2,11 +2,12 @@ package client;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import peer.Peer;
+import peer.PeerRMI;
+import java.rmi.RemoteException;
 
 class Client {
     static boolean enhanced = false;
-    static Peer stub = null;
+    static PeerRMI stub = null;
 
     public static void main(String args[]) {
         if (args.length < 2) {
@@ -21,32 +22,61 @@ class Client {
                 System.out.println("Invalid Number of arguments");
             }
             int replicationDegree = Integer.parseInt(args[3]);
+            try{
             backup(args[2], replicationDegree);
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
             break;
         case "RESTORE":
             if (args.length < 3) {
                 System.out.println("Invalid Number of arguments");
             }
-            restore(args[2]);
+            try{
+                restore(args[2]);
+            }
+            catch(Exception e){
+               e.printStackTrace();
+            }
+            
             break;
         case "DELETE":
             if (args.length < 3) {
                 System.out.println("Invalid Number of arguments");
             }
-            delete(args[2]);
+            
+            try{
+                delete(args[2]);
+            }
+            catch(Exception e){
+               e.printStackTrace();
+            }
             break;
         case "RECLAIM":
             if (args.length < 3) {
                 System.out.println("Invalid Number of arguments");
             }
             int diskSpace = Integer.parseInt(args[2]);
-            reclaim(diskSpace);
+            
+            try{
+                reclaim(diskSpace);
+            }
+            catch(Exception e){
+               e.printStackTrace();
+            }
             break;
         case "STATE":
             if (args.length < 2) {
                 System.out.println("Invalid Number of arguments");
             }
-            state();
+            try{
+                state();
+            }
+            catch(Exception e){
+               e.printStackTrace();
+            }
+            
             break;
         default:
             System.out.println("Operation not recognised");
@@ -56,11 +86,16 @@ class Client {
 
     static void backup(String filename, int replicationDegree) {
 
-        
+        try{
+            stub.backup(filename, replicationDegree);
+        }
+        catch(RemoteException e){
+           e.printStackTrace();
+        }
         
         
 
-        stub.backup(filename, replicationDegree);
+        
     }
 
     static void restore(String filename) {
@@ -80,9 +115,10 @@ class Client {
     }
 
     static void locatePeer(String peerName) {
+        String RMIName = "Peer" + peerName;
         try {
             Registry registry = LocateRegistry.getRegistry(null);
-            stub = (Peer) registry.lookup(peerName);
+            stub = (PeerRMI) registry.lookup(RMIName);
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();

@@ -37,7 +37,7 @@ public class PeerChannel implements Runnable {
     public void connect() {
         try {
             socket = new MulticastSocket(port);
-            socket.setSoTimeout(2 * 1000); // 2 second timeout
+            //socket.setSoTimeout(2 * 1000); // 2 second timeout
             socket.joinGroup(InetAddress.getByName(multicastGroup));
         } catch (IOException e) {
             e.printStackTrace();
@@ -79,14 +79,14 @@ public class PeerChannel implements Runnable {
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
 
-            if (Peer.id == SenderId) // Initiator peer doesn't store its own files
+            if (peer.id == SenderId) // Initiator peer doesn't store its own files
                 return;
 
             String fileId = (String) args[3];
             int Chunkno = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
             byte[] data = msg.substring(msg.lastIndexOf("\r\n") + 2).getBytes();
 
-            Peer.chunks.add(new Chunk(data, Chunkno, fileId, ReplicationDeg));
+            peer.chunks.add(new Chunk(data, Chunkno, fileId, ReplicationDeg));
 
             String response = "";
 
@@ -106,7 +106,7 @@ public class PeerChannel implements Runnable {
             }
             
 
-            Peer.channels.get("MC").send(response);
+            peer.channels.get("MC").send(response);
         }
 
     }

@@ -29,28 +29,32 @@ import peer.Chunk;
 
 public class Peer implements PeerRMI
 {
-    static Peer instance = new Peer();
-    static int id = 0;
-    static String version = "1.0";
+    static Peer instance;
+    int id = 0;
+    String version = "1.0";
 
-    static int chunkSize = 100;
-    static ArrayList<Chunk> chunks;
+    int chunkSize = 100;
+    ArrayList<Chunk> chunks;
 
-    static ArrayList<String> peers;
+    ArrayList<String> peers;
 
-    static ThreadPoolExecutor pool;
+    ThreadPoolExecutor pool;
 
-    static ConcurrentHashMap<String, PeerChannel> channels;
+    ConcurrentHashMap<String, PeerChannel> channels;
 
-    private static final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
-
+    public Peer(String id){
+        this.id = Integer.parseInt(id);
+        this.initPool();
+        this.initChannels();
+        this.initRMI();
+        this.chunks = new ArrayList<Chunk>();
+    }
     public static void main(String[] args)
     {
-        initPool();
-        initChannels();
+        instance = new Peer(args[0]);
 
-        chunks = new ArrayList<Chunk>();
     }
 
 
@@ -77,7 +81,7 @@ public class Peer implements PeerRMI
         
     }
 
-    public static void initChannels(){
+    public void initChannels(){
         PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0",instance);
         PeerChannel MC = new PeerChannel("MC", "226.0.0.0",instance);
         PeerChannel MDR = new PeerChannel("MDR", "227.0.0.0",instance);
@@ -97,13 +101,29 @@ public class Peer implements PeerRMI
 
     }
 
-    public static void initPool(){
-        pool = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
+    public void initPool(){
+        pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
     }
 
 
-    public static ConcurrentHashMap<String, String> getMap(){
+    public ConcurrentHashMap<String, String> getMap(){
         return map;
+    }
+
+    private void initRMI(){
+        try {
+            PeerRMI stub = (PeerRMI) UnicastRemoteObject.exportObject(this, 0);
+
+            // Bind the remote object's stub in the registry
+            Registry registry = LocateRegistry.getRegistry();
+            String RMIName = "Peer" + this.id;
+            registry.bind(RMIName, stub);
+
+            System.err.println("Server ready");
+        } catch (Exception e) {
+            // System.err.println("Server exception: " + e.toString());
+            e.printStackTrace();
+        }
     }
 
 

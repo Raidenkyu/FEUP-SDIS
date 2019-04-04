@@ -28,7 +28,7 @@ public class Worker implements Runnable {
     public String task;
     public Object[] args;
 
-    public Peer parent = null;
+    public Peer peer = null;
     int chunkSize;
 
     public Worker(String task, Object[] args, Peer peer) {
@@ -39,8 +39,8 @@ public class Worker implements Runnable {
             this.args[i] = args[i];
         }
 
-        this.parent = peer;
-        this.chunkSize = Peer.chunkSize;
+        this.peer = peer;
+        this.chunkSize = peer.chunkSize;
     }
 
     @Override
@@ -71,8 +71,8 @@ public class Worker implements Runnable {
         byte[] buffer;
         int bytesRead;
         int numChunks = (int) Math.ceil((double) data.length / chunkSize);
-        int senderId = Peer.id;
-        String version = Peer.version;
+        int senderId = peer.id;
+        String version = peer.version;
 
         String fileId = this.encrypt(filename);
         String CRLF = "\r\n";
@@ -96,7 +96,7 @@ public class Worker implements Runnable {
         int stored = 0;
 
         while (stored < replicationDegree) {
-            String response = Peer.channels.get("MC").messageQueue.poll();
+            String response = peer.channels.get("MC").messageQueue.poll();
         }
 
     }
@@ -142,7 +142,7 @@ public class Worker implements Runnable {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        
+
         return null;
     }
 

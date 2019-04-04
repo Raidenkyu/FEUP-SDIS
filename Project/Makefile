@@ -29,4 +29,4 @@ clean:
 	$(RM) *.class
 
 rmi: 
-	rmiregistry -J-Djava.rmi.server.codebase=file:///home/joao/Documentos/SDIS/Lab3/bin/
+	rmiregistry -J-Djava.rmi.server.codebase=file:///home/joao/Documentos/SDIS/Project/bin/
