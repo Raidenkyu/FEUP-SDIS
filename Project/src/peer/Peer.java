@@ -54,9 +54,9 @@ public class Peer implements PeerRMI
     }
 
 
-    public void backup(String filename, int size, int replicationDegree)
+    public void backup(String filename, int replicationDegree)
     {
-        Object[] args = {filename,size,replicationDegree};
+        Object[] args = {filename,replicationDegree};
         Thread dataChannel = new Thread(new Worker("backup",args,instance),"Backup");
         pool.execute(dataChannel);
     }

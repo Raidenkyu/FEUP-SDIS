@@ -60,8 +60,7 @@ class Client {
         
         
 
-        stub.backup(filename, (int) file.length(), replicationDegree);
-        in.close();
+        stub.backup(filename, replicationDegree);
     }
 
     static void restore(String filename) {

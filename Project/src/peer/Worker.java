@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.DataInputStream;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-
+import java.io.FileNotFoundException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -20,10 +20,11 @@ import java.rmi.Remote;
 import java.util.concurrent.ConcurrentHashMap;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import peer.Chunk;
 
-public class Worker implements Runnable{
+public class Worker implements Runnable {
     public String task;
     public Object[] args;
 
@@ -45,17 +46,15 @@ public class Worker implements Runnable{
     @Override
     public void run() {
         if (task.equals("backup")) {
-            String filename = (String)args[0];
-            int size = (Integer)args[1];
+            String filename = (String) args[0];
             int replicationDegree = (Integer) args[3];
-            File file = new File(filename);
-            byte[] data = new byte[(int) file.length()];
-            FileInputStream in = new FileInputStream(file);
+            byte data[] = this.getFileData(filename);
             System.out.println("uploading to server...");
-            in.read(data, 0, data.length);
 
-            backup(data, filename, size, replicationDegree);
-            in.close();
+            backup(data, filename, replicationDegree);
+
+            System.out.println("uploading to server...");
+
         } else if (task.equals("delete")) {
 
         } else if (task.equals("restore")) {
@@ -68,16 +67,14 @@ public class Worker implements Runnable{
         }
     }
 
-    public void backup(byte[] data, String filename, int size, int replicationDegree) {
+    public void backup(byte[] data, String filename, int replicationDegree) {
         byte[] buffer;
         int bytesRead;
         int numChunks = (int) Math.ceil((double) data.length / chunkSize);
         int senderId = Peer.id;
         String version = Peer.version;
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedhash = digest.digest(filename.getBytes());
-        String fileId = new String(encodedhash);
+        String fileId = this.encrypt(filename);
         String CRLF = "\r\n";
 
         for (int i = 0; i < numChunks; i++) {
@@ -91,20 +88,17 @@ public class Worker implements Runnable{
                 buffer[j] = data[i * chunkSize + j];
             }
             String body = new String(buffer);
-            String msg = "PUTCHUNCK" + version + senderId + i + CRLF+ CRLF + body;
+            String msg = "PUTCHUNCK" + version + senderId + i + CRLF + CRLF + body;
             System.out.println(msg);
-            //peer.channels.get("MDB").send();
+            // peer.channels.get("MDB").send();
         }
 
-        
         int stored = 0;
 
-        while (stored < replicationDegree)
-        {
+        while (stored < replicationDegree) {
             String response = Peer.channels.get("MC").messageQueue.poll();
         }
 
-        
     }
 
     public void restore() {
@@ -122,4 +116,34 @@ public class Worker implements Runnable{
     public void state() {
 
     }
+
+    private byte[] getFileData(String filename) {
+
+        try {
+            File file = new File(filename);
+            FileInputStream in = new FileInputStream(file);
+            byte[] data = new byte[(int) file.length()];
+            in.read(data, 0, data.length);
+            in.close();
+
+            return data;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String encrypt(String filename) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedhash = digest.digest(filename.getBytes());
+            String fileId = new String(encodedhash);
+            return fileId;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+
 }
