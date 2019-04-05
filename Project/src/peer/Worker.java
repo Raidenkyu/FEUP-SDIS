@@ -139,7 +139,7 @@ public class Worker implements Runnable {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedhash = digest.digest(data);
-            String fileId = new String(encodedhash);
+            String fileId = bytesToHex(encodedhash);
             return fileId;
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -147,6 +147,17 @@ public class Worker implements Runnable {
 
         return null;
     }
+
+    private static String bytesToHex(byte[] hashInBytes) {
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hashInBytes.length; i++) {
+            sb.append(Integer.toString((hashInBytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+        return sb.toString();
+
+    }
+
 
 
 
