@@ -1,25 +1,16 @@
 package peer;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.MulticastSocket;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
-import java.io.DataInputStream;
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -32,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 
-import java.util.Enumeration;
-
 import peer.Chunk;
 
 public class Peer implements PeerRMI
@@ -41,6 +30,8 @@ public class Peer implements PeerRMI
     static Peer instance;
     int id = 0;
     String version = "1.0";
+    
+    public static final String CRLF = "\r\n";
 
     int chunkSize = 100;
     ArrayList<Chunk> chunks;
@@ -51,7 +42,7 @@ public class Peer implements PeerRMI
 
     ConcurrentHashMap<String, PeerChannel> channels;
 
-    Path chunkPath = Paths.get("");
+    Path chunkPath = Paths.get(".");
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
@@ -227,12 +218,43 @@ public class Peer implements PeerRMI
             e.printStackTrace();
         }
     }
+    
+    
+    protected byte[] makeMsg(String header, Chunk chunk) {
+        byte[] headerBytes = header.getBytes();
+        byte[] chunkBytes = chunk.data;
+        byte[] msg = new byte[headerBytes.length + chunkBytes.length];
+        System.arraycopy(headerBytes, 0, msg, 0, headerBytes.length);
+        System.arraycopy(chunkBytes, 0, msg, headerBytes.length, chunkBytes.length);
 
-    private void storeChunk(Chunk chunk)
-    {
+        return msg;
+    }
 
-        // try (FileOutputStream stream = new FileOutputStream(path)) {
-        //     stream.write(bytes);
-        // }
+    protected String makeHeader(String op, Chunk chunk){
+        String CRLF = "\r\n";
+        String header = "PUTCHUNK";  
+		header += " " + this.version; 
+		header += " " + this.id;
+		header += " " + chunk.fileId;
+		header += " " + chunk.index;
+		header += " " + chunk.replicationDegree;
+        header += " " + CRLF + CRLF;
+                        
+        return header;
+    }
+    
+    protected String parseHeader(byte[] packetData){
+        String msg = new String(packetData);
+        String header = msg.substring(0,msg.indexOf(CRLF));
+        System.out.println(header);
+        return header;
+    }
+
+    protected byte[] parseChunk(byte[] packetData){
+        String msg = new String(packetData);
+        int dataIndex = msg.indexOf(CRLF);
+        dataIndex += 2*CRLF.length();
+        byte[] chunkData = Arrays.copyOfRange(packetData, dataIndex, packetData.length);
+        return chunkData;
     }
 }
