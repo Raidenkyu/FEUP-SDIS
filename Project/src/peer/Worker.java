@@ -87,7 +87,6 @@ public class Worker implements Runnable {
             Chunk chunk = new Chunk(buffer,i,fileId,replicationDegree);
             String header = this.peer.makeHeader("PUTCHUNK", chunk);
             byte[] msg = this.peer.makeMsg(header, chunk);
-            System.out.println("Msg Size: " + msg.length);
             peer.channels.get("MDB").send(msg);
         }
 

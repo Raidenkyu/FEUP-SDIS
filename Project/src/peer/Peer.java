@@ -246,7 +246,7 @@ public class Peer implements PeerRMI
     protected String parseHeader(byte[] packetData){
         String msg = new String(packetData);
         String header = msg.substring(0,msg.indexOf(CRLF));
-        System.out.println(header);
+        System.out.println("Received Message Header: " + header);
         return header;
     }
 

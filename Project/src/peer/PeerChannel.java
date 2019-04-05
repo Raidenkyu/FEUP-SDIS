@@ -77,10 +77,9 @@ public class PeerChannel implements Runnable {
     }
 
     void MDBListener(byte[] packetData, String IP) {
-        String header = this.parseHeader(packetData);
+        String header = this.peer.parseHeader(packetData);
         
         String[] args = header.trim().split(" +");
-        System.out.println(this.peer);
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
 
@@ -203,22 +202,6 @@ public class PeerChannel implements Runnable {
         return null;
     }
 
-
-    private String parseHeader(byte[] packetData){
-        String msg = new String(packetData);
-        String header = msg.substring(0,msg.indexOf(CRLF));
-        System.out.println("Msg Received: " + header);
-        return header;
-    }
-
-    private byte[] parseChunk(byte[] packetData){
-        String msg = new String(packetData);
-        int dataIndex = msg.indexOf(CRLF);
-        dataIndex += 2*CRLF.length();
-        byte[] chunkData = Arrays.copyOfRange(packetData, dataIndex, packetData.length);
-        return chunkData;
-    
-    }
     private void waitUniformely()
     {
         Random random = new Random(Instant.now().toEpochMilli());
