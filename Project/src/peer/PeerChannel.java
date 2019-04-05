@@ -83,9 +83,8 @@ public class PeerChannel implements Runnable {
 
     void MDBListener(byte[] packetData, String IP) {
         String header = this.parseHeader(packetData);
-       
         String[] args = header.trim().split(" +");
-
+        System.out.println(this.peer);
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
 
@@ -172,7 +171,7 @@ public class PeerChannel implements Runnable {
     private String parseHeader(byte[] packetData){
         String msg = new String(packetData);
         String header = msg.substring(0,msg.indexOf(CRLF));
-        System.out.println(header);
+        System.out.println("Msg Received: " + header);
         return header;
     }
 

@@ -77,7 +77,7 @@ public class Peer implements PeerRMI
     {
         Integer degree = replicationDegree;
         Object[] args = {filename,degree};
-        Thread dataChannel = new Thread(new Worker("backup",args,instance),"Backup");
+        Thread dataChannel = new Thread(new Worker("backup",args,this),"Backup");
         pool.execute(dataChannel);
     }
 
@@ -98,9 +98,9 @@ public class Peer implements PeerRMI
     }
 
     public void initChannels(){
-        PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0",instance);
-        PeerChannel MC = new PeerChannel("MC", "226.0.0.0",instance);
-        PeerChannel MDR = new PeerChannel("MDR", "227.0.0.0",instance);
+        PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0",this);
+        PeerChannel MC = new PeerChannel("MC", "226.0.0.0",this);
+        PeerChannel MDR = new PeerChannel("MDR", "227.0.0.0",this);
         Thread dataChannel = new Thread(MDB, "MDB");
         Thread controlChannel = new Thread(MC, "MC");
         Thread recoveryChannel = new Thread(MDR, "MDR");
