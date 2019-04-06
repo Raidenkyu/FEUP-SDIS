@@ -1,23 +1,8 @@
 package peer;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.MulticastSocket;
-import java.net.InetAddress;
-import java.util.ArrayList;
 import java.io.File;
-import java.io.DataInputStream;
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.rmi.registry.Registry;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.rmi.server.UnicastRemoteObject;
-import java.rmi.Remote;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,7 +14,6 @@ public class Worker implements Runnable {
     public Object[] args;
 
     public Peer peer = null;
-    int chunkSize;
 
     public Worker(String task, Object[] args, Peer peer) {
         this.task = task;
@@ -40,7 +24,6 @@ public class Worker implements Runnable {
         }
 
         this.peer = peer;
-        this.chunkSize = peer.chunkSize;
     }
 
     @Override
@@ -49,11 +32,11 @@ public class Worker implements Runnable {
             String filename = (String) args[0];
             int replicationDegree = (Integer) args[1];
             byte data[] = this.getFileData(filename);
-            System.out.println("uploading to server...");
+            System.out.println("Uploading to server...");
 
             backup(data, filename, replicationDegree);
 
-            System.out.println("uploading to server...");
+            System.out.println("Finished uploading.");
 
         } else if (task.equals("delete")) {
 
@@ -69,36 +52,65 @@ public class Worker implements Runnable {
 
     public void backup(byte[] data, String filename, int replicationDegree) {
         byte[] buffer;
-        int numChunks = (int) Math.ceil((double) data.length / chunkSize);
+        int numChunks = (int) Math.ceil((double) data.length / peer.chunkSize);
 
         String fileId = this.encrypt(data);
 
-
-        for (int i = 0; i < numChunks; i++) {
-            int bufSize = data.length - i * chunkSize;
-            if (bufSize > chunkSize)
-                bufSize = chunkSize;
+    	for (int i = 0; i < numChunks; i++) {
+            int bufSize = data.length - i * peer.chunkSize;
+            if (bufSize > peer.chunkSize)
+                bufSize = peer.chunkSize;
 
             buffer = new byte[bufSize];
 
             for (int j = 0; j < bufSize; j++) {
-                buffer[j] = data[i * chunkSize + j];
+                buffer[j] = data[i * peer.chunkSize + j];
             }
+            
             Chunk chunk = new Chunk(buffer,i,fileId,replicationDegree);
             String header = this.peer.makeHeader("PUTCHUNK", chunk);
-            byte[] msg = this.peer.makeMsg(header, chunk);
-            peer.channels.get("MDB").send(msg);
+            byte[] msg = this.peer.makeMsg(header, chunk);                
+           
+            for (int tries = 1; tries <= 5; tries++) {
+            	
+                peer.channels.get("MDB").send(msg);
+
+            	int stored = 0;
+                long startTime = System.nanoTime();
+                long deltaTime = 0;
+                int numSeconds = (int)Math.pow(2, tries);
+                
+                while (stored < replicationDegree && deltaTime < numSeconds*1000*1000*1000) { // Keeps polling for a number of seconds equivalent to the variable tries
+                    
+                	byte[] response = peer.channels.get("MC").messageQueue.poll();
+                	
+                	if (response != null) {
+                		String responseHeader = peer.parseHeader(response);
+                		String[] args = responseHeader.split(" +");
+                		
+                        System.out.println("Received Message Header: " + responseHeader);
+                		
+                		if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
+                		{
+                			stored++;
+                		}
+                	}
+                	
+                	deltaTime = (System.nanoTime() - startTime);
+                }
+                
+                if (stored == replicationDegree) // Success
+                {
+                	System.out.println("Chunk backed up sucessfully!");
+                	break;
+                }
+                else
+                {
+                	System.out.println("Failed to backup chunk");
+                }
+            }
         }
-
-        int stored = 0;
-
-        while (stored < replicationDegree) {
-            String response = peer.channels.get("MC").popMessage(peer.id);
-
-            
-
-        }
-
+                   
     }
 
     public void restore() {

@@ -4,17 +4,11 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
-
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentHashMap;
-
-import java.net.DatagramPacket;
 
 import java.time.Instant;
-import java.lang.Math;
-
-import java.util.Arrays;
 
 
 public class PeerChannel implements Runnable {
@@ -24,10 +18,9 @@ public class PeerChannel implements Runnable {
     String multicastGroup = "";
 
 
-    ConcurrentHashMap<Integer, ConcurrentLinkedQueue<String>> messageQueue = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<String>>();
+    ConcurrentLinkedQueue<byte[]> messageQueue = new ConcurrentLinkedQueue<byte[]>();
 
     Peer peer = null;
-    // Peer parent = Peer;
 
     public PeerChannel(String id, String multicastGroup, Peer peer) {
         this.id = id;
@@ -53,15 +46,15 @@ public class PeerChannel implements Runnable {
 
         while (true) // Listen for peers
         {
-            byte[] data = new byte[1000];
+            byte[] data = new byte[1000 + peer.chunkSize];
             DatagramPacket packet = new DatagramPacket(data, data.length);
             try {
                 socket.receive(packet);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            byte[] packetData = packet.getData();
+                        
+            byte[] packetData = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
 
             if (id.equals("MDB")) {
                 this.MDBListener(packetData, packet.getAddress().getHostName());
@@ -79,7 +72,7 @@ public class PeerChannel implements Runnable {
     void MDBListener(byte[] packetData, String IP) {
         String header = this.peer.parseHeader(packetData);
         
-        String[] args = header.trim().split(" +");
+        String[] args = header.split(" +");
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
 
@@ -92,17 +85,11 @@ public class PeerChannel implements Runnable {
             
             Chunk chunk = new Chunk(data, ChunkNo, fileId, ReplicationDeg);
             peer.chunks.add(chunk);
-//            chunk.store(peer.chunkPath.toString(), peer.id);
+            chunk.store(peer.chunkPath.toString(), peer.id);
             
-
-            String response = "";
-
-            response += "STORED ";
-            response += args[1] + " ";
-            response += args[2] + " ";
-            response += args[3] + " ";
-            response += args[4] + " ";
-            response += this.peer.CRLF + this.peer.CRLF;
+            System.out.println("Stored chunk: " + chunk);
+            
+            String response = peer.makeHeader("STORED", chunk);
             
             waitUniformely();
 
@@ -113,11 +100,11 @@ public class PeerChannel implements Runnable {
 
     void MCListener(byte[] packetData) {
         
-        String msg = this.peer.parseHeader(packetData);
-        String[] args = msg.trim().split(" +");
+        String msg = new String(packetData);
+        String[] args = msg.split(" +");
 
         if (args[0].equals("STORED")) {
-            queueMessage(peer.id, msg);
+            messageQueue.add(msg.getBytes());
         }
         else if (args[0].equals("GETCHUNK")) {
         	int senderId = Integer.parseInt(args[2]);
@@ -128,22 +115,13 @@ public class PeerChannel implements Runnable {
             	
             	if (peer.chunks.get(i).fileId.equals(fileId) && peer.chunks.get(i).index == ChunkNo) {
             		
-            		 String response = "";
-
-                     response += "CHUNK ";
-                     response += args[1] + " ";
-                     response += args[2] + " ";
-                     response += args[3] + " ";
-                     response += args[4] + " ";
-                     response += this.peer.CRLF + this.peer.CRLF;
-                     
-                     // TODO add body
+            		 byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", peer.chunks.get(i)), peer.chunks.get(i));
                      
                      waitUniformely();
                      
-                     String chunkMsg = peer.channels.get("MDR").popMessage(senderId);
+                     byte[] chunkMsg = peer.channels.get("MDR").messageQueue.poll();
 
-                     peer.channels.get("MDR").send(response.getBytes());
+                     peer.channels.get("MDR").send(response);
             	}
             }
         }
@@ -179,33 +157,11 @@ public class PeerChannel implements Runnable {
 
     }
 
-    private void queueMessage(Integer id, String message) {
-        ConcurrentLinkedQueue<String> singleQueue = messageQueue.get(id);
-
-        if (singleQueue == null) {
-            singleQueue = new ConcurrentLinkedQueue<String>();
-            messageQueue.put(id, singleQueue);
-        }
-
-        singleQueue.add(message);
-    }
-
-    public String popMessage(Integer id)
-    {
-        ConcurrentLinkedQueue<String> singleQueue = messageQueue.get(id);
-
-        if (singleQueue != null)
-        {
-            return singleQueue.poll();
-        }
-
-        return null;
-    }
 
     private void waitUniformely()
     {
         Random random = new Random(Instant.now().toEpochMilli());
-        int delay = (int) Math.round((random.nextGaussian() + 1) / 2 * 400);
+        int delay = random.nextInt(400);
         try {
             Thread.sleep(delay);
         } catch (InterruptedException e) {

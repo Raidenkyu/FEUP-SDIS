@@ -10,14 +10,10 @@ import java.nio.file.Paths;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.io.FileInputStream;
-import java.io.IOException;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.rmi.server.UnicastRemoteObject;
-import java.rmi.Remote;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -42,7 +38,7 @@ public class Peer implements PeerRMI
 
     ConcurrentHashMap<String, PeerChannel> channels;
 
-    Path chunkPath = Paths.get(".");
+    Path chunkPath = Paths.get(System.getProperty("user.dir"));
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
@@ -56,7 +52,7 @@ public class Peer implements PeerRMI
 		this.initChannels();
 		this.initRMI();
 
-        }
+    }
 
     public static void main(String[] args)
     {
@@ -126,10 +122,10 @@ public class Peer implements PeerRMI
             String RMIName = "Peer" + this.id;
             registry.bind(RMIName, stub);
 
-            System.err.println("Server ready");
+            System.out.println("Server ready");
         } catch (Exception e) {
-            // System.err.println("Server exception: " + e.toString());
-            e.printStackTrace();
+            System.err.println("Failed to connect to RMI!");
+            System.exit(1);
         }
     }
 
@@ -142,7 +138,7 @@ public class Peer implements PeerRMI
             for (Path child : dirStream) {
                 
                 String pathStr = child.toString();                
-                int pos = pathStr.lastIndexOf('\\');
+                int pos = pathStr.lastIndexOf(File.separator);
                 if (pos != -1)
                 	pathStr = pathStr.substring(pos+1);
 
@@ -152,7 +148,7 @@ public class Peer implements PeerRMI
                         for (Path child2 : dirStream2) {
 
                             pathStr = child2.toString();
-                            pos = pathStr.lastIndexOf('\\');
+                            pos = pathStr.lastIndexOf(File.separator);
                             if (pos != -1)
                             	pathStr = pathStr.substring(pos+1);
 
@@ -163,7 +159,7 @@ public class Peer implements PeerRMI
                                     for (Path child3 : dirStream3) {
 
                                         pathStr = child3.toString();
-                                        pos = pathStr.lastIndexOf('\\');
+                                        pos = pathStr.lastIndexOf(File.separator);
                                         if (pos != -1)
                                         	pathStr = pathStr.substring(pos+1);
 
@@ -174,7 +170,7 @@ public class Peer implements PeerRMI
                                             try (DirectoryStream<Path> dirStream4 = Files.newDirectoryStream(child3)) {
                                                 for (Path child4 : dirStream4) {
                                                     pathStr = child4.toString();
-                                                    pos = pathStr.lastIndexOf('\\');
+                                                    pos = pathStr.lastIndexOf(File.separator);
                                                     if (pos != -1)
                                                     	pathStr = pathStr.substring(pos+1);
 
@@ -231,22 +227,37 @@ public class Peer implements PeerRMI
     }
 
     protected String makeHeader(String op, Chunk chunk){
-        String CRLF = "\r\n";
-        String header = "PUTCHUNK";  
+        String header = "";
+        header += op;
 		header += " " + this.version; 
 		header += " " + this.id;
 		header += " " + chunk.fileId;
-		header += " " + chunk.index;
-		header += " " + chunk.replicationDegree;
+		
+		if (op.equals("PUTCHUNK") || op.equals("STORED") || op.equals("GETCHUNK") || op.equals("CHUNK") || op.equals("REMOVED"))
+			header += " " + chunk.index;
+		
+		if (op.equals("PUTCHUNK"))
+			header += " " + chunk.replicationDegree;
+		
         header += " " + CRLF + CRLF;
                         
         return header;
     }
     
     protected String parseHeader(byte[] packetData){
-        String msg = new String(packetData);
-        String header = msg.substring(0,msg.indexOf(CRLF));
-        System.out.println("Received Message Header: " + header);
+        String header = "";
+        int i;
+        for (i = 0; i < packetData.length-1; i++) 
+        {
+        	if (packetData[i] == '\r' && packetData[i+1] == '\n')
+        		break;
+        	
+        	header += (char)packetData[i];
+        }
+        
+        if (i == packetData.length-1)
+        	return null;
+                
         return header;
     }
 

@@ -1,8 +1,9 @@
 package peer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Chunk
 {
@@ -23,15 +24,14 @@ public class Chunk
 
     public void store(String chunkPath, int peerId)
     {
-    	String filepath = chunkPath + "\\" + "peer" + peerId + "\\" + "backup" + "\\" + fileId + "\\" + "chk" + index;
+    	String filepath = chunkPath + File.separator + "peer" + peerId + File.separator + "backup" + File.separator + fileId + File.separator;
     	try {
-            File file = new File(filepath);
-            FileOutputStream out = new FileOutputStream(file);
+    		File file = new File(filepath);
+    		file.mkdirs();
+    		filepath += "chk" + index;
+    		
+    		Files.write(Paths.get(filepath), data);
             
-            out.write(data, 0, data.length);
-            
-            out.close();
-
     	} catch (IOException e) {
             e.printStackTrace();
         }
