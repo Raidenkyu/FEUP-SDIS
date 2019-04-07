@@ -117,11 +117,12 @@ public class PeerChannel implements Runnable {
             		
             		 byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", peer.chunks.get(i)), peer.chunks.get(i));
                      
+            		 int chunkNumber = peer.channels.get("MDR").messageQueue.size();
+            		 
                      waitUniformely();
                      
-                     byte[] chunkMsg = peer.channels.get("MDR").messageQueue.poll();
-
-                     peer.channels.get("MDR").send(response);
+                     if (chunkNumber >= peer.channels.get("MDR").messageQueue.size())
+                    	 peer.channels.get("MDR").send(response);
             	}
             }
         }
