@@ -131,6 +131,7 @@ public class Worker implements Runnable {
     public void reclaim(int space) {
         long reclaimedSpace = 1000 * space;
         while(this.peer.storage.getUsedSpace() > reclaimedSpace){
+            //TODO: Mandar msg de Remove do Chunk
             this.peer.storage.deleteChunk(0);
         }
         

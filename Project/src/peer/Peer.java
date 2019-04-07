@@ -78,7 +78,7 @@ public class Peer implements PeerRMI
     }
 
     public void reclaim(int DiskSpace) {
-        Integer space = diskSpace;
+        Object[] args = {DiskSpace};
         Thread backupThread = new Thread(new Worker("backup",args,this),"Backup");
         pool.execute(backupThread);
     }

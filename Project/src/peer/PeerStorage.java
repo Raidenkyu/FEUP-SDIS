@@ -42,7 +42,7 @@ public class PeerStorage {
 
     public boolean deleteChunk(int i){
 		
-		if(i >= this.chunks.length){
+		if(i >= this.chunks.size()){
 			return false;
         }
         long chunkSpace = this.chunks.get(i).data.length;
