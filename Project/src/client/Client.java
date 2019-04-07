@@ -108,7 +108,13 @@ class Client {
     }
 
     static void reclaim(int diskSpace) {
-
+        try{
+            stub.reclaim(diskSpace);
+        }
+        catch(RemoteException e){
+           e.printStackTrace();
+        }
+        
     }
 
     static void state() {

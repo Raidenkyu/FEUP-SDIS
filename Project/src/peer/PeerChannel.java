@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.InetAddress;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -84,7 +86,7 @@ public class PeerChannel implements Runnable {
             byte[] data = this.peer.parseChunk(packetData);
             
             Chunk chunk = new Chunk(data, ChunkNo, fileId, ReplicationDeg);
-            peer.chunks.add(chunk);
+            peer.storage.addChunk(chunk);
             chunk.store(peer.chunkPath.toString(), peer.id);
             
             System.out.println("Stored chunk: " + chunk);
@@ -109,13 +111,14 @@ public class PeerChannel implements Runnable {
         else if (args[0].equals("GETCHUNK")) {
         	int senderId = Integer.parseInt(args[2]);
         	String fileId = args[3];
-        	int ChunkNo = Integer.parseInt(args[4]);
+            int ChunkNo = Integer.parseInt(args[4]);
+            ArrayList<Chunk> chunks = this.peer.storage.getChunks();
         	
-        	for (int i = 0; i < peer.chunks.size(); i++) {
+        	for (int i = 0; i < chunks.size(); i++) {
             	
-            	if (peer.chunks.get(i).fileId.equals(fileId) && peer.chunks.get(i).index == ChunkNo) {
+            	if (chunks.get(i).fileId.equals(fileId) && chunks.get(i).index == ChunkNo) {
             		
-            		 byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", peer.chunks.get(i)), peer.chunks.get(i));
+            		 byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", chunks.get(i)), chunks.get(i));
                      
             		 int chunkNumber = peer.channels.get("MDR").messageQueue.size();
             		 
@@ -128,13 +131,14 @@ public class PeerChannel implements Runnable {
         }
         else if (args[0].equals("DELETE")) {
             String fileId = args[3];
+            ArrayList<Chunk> chunks = this.peer.storage.getChunks();
             
-            for (int i = 0; i < peer.chunks.size(); i++) {
+            for (int i = 0; i < chunks.size(); i++) {
             	
-            	if (peer.chunks.get(i).fileId.equals(fileId)) {
+            	if (chunks.get(i).fileId.equals(fileId)) {
             		
-            		peer.chunks.get(i).delete(peer.chunkPath.toString(), peer.id);
-            		peer.chunks.remove(i);
+            		chunks.get(i).delete(peer.chunkPath.toString(), peer.id);
+            		chunks.remove(i);
             		i--;
             	}
             }

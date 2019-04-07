@@ -30,7 +30,8 @@ public class Peer implements PeerRMI
     public static final String CRLF = "\r\n";
 
     int chunkSize = 100;
-    ArrayList<Chunk> chunks;
+    
+    PeerStorage storage;
 
     ArrayList<String> peers;
 
@@ -44,7 +45,7 @@ public class Peer implements PeerRMI
 
     public Peer(String id){
 
-		this.chunks = new ArrayList<Chunk>();
+		this.storage = new PeerStorage(this);
 		this.id = Integer.parseInt(id);
 		retrieveChunksFromFiles();
 
@@ -64,8 +65,8 @@ public class Peer implements PeerRMI
     {
         Integer degree = replicationDegree;
         Object[] args = {filename,degree};
-        Thread dataChannel = new Thread(new Worker("backup",args,this),"Backup");
-        pool.execute(dataChannel);
+        Thread backupThread = new Thread(new Worker("backup",args,this),"Backup");
+        pool.execute(backupThread);
     }
 
     public void restore() {
@@ -76,8 +77,10 @@ public class Peer implements PeerRMI
 
     }
 
-    public void reclaim() {
-        
+    public void reclaim(int DiskSpace) {
+        Integer space = diskSpace;
+        Thread backupThread = new Thread(new Worker("backup",args,this),"Backup");
+        pool.execute(backupThread);
     }
 
     public void state() {
@@ -186,8 +189,7 @@ public class Peer implements PeerRMI
                                                             in.close();
                                                             
                                                             Chunk chunk = new Chunk(data, chunkIndex, fileId, 1);
-                                                            
-                                                            chunks.add(chunk);
+                                                            this.storage.addChunk(chunk);
 
                                                             System.out.println("Added chunk: " + chunk);
 

@@ -44,6 +44,13 @@ public class Worker implements Runnable {
 
         } else if (task.equals("reclaim")) {
 
+            int space = (Integer) args[0];
+            System.out.println("Reclaiming Space...");
+
+            this.reclaim(space);
+
+            System.out.println("Space reclaimed.");
+
         } else {
             System.out.println("Wrong task!");
             System.exit(-1);
@@ -101,7 +108,7 @@ public class Worker implements Runnable {
                 
                 if (stored == replicationDegree) // Success
                 {
-                	System.out.println("Chunk backed up sucessfully!");
+                	System.out.println("File backed up sucessfully!");
                 	break;
                 }
                 else
@@ -121,7 +128,14 @@ public class Worker implements Runnable {
 
     }
 
-    public void reclaim() {
+    public void reclaim(int space) {
+        long reclaimedSpace = 1000 * space;
+        while(this.peer.storage.getUsedSpace() > reclaimedSpace){
+            this.peer.storage.deleteChunk(0);
+        }
+        
+        this.peer.storage.setSpace(reclaimedSpace);
+
 
     }
 

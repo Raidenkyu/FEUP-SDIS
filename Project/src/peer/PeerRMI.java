@@ -11,7 +11,7 @@ public interface PeerRMI extends Remote {
 
     public void delete() throws RemoteException;
 
-    public void reclaim() throws RemoteException;
+    public void reclaim(int diskSpace) throws RemoteException;
 
     public void state() throws RemoteException;
 
