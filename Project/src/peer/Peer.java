@@ -29,9 +29,9 @@ public class Peer implements PeerRMI
     
     public static final String CRLF = "\r\n";
 
-    int chunkSize = 100;
+    public static int chunkSize = 100;
     
-    PeerStorage storage;
+    public PeerStorage storage;
 
     ArrayList<String> peers;
 
@@ -61,16 +61,17 @@ public class Peer implements PeerRMI
     }
 
 
-    public void backup(String filename, int replicationDegree)
-    {
+    public void backup(String fileId, int replicationDegree) {
         Integer degree = replicationDegree;
-        Object[] args = {filename,degree};
-        Thread backupThread = new Thread(new Worker("backup",args,this),"Backup");
+        Object[] args = {fileId,degree};
+        Thread backupThread = new Thread(new Worker("backup", args, this), "Backup");
         pool.execute(backupThread);
     }
 
-    public void restore() {
-
+    public void restore(String filename) {
+        Object[] args = {filename};
+        Thread restoreThread = new Thread(new Worker("restore", args, this), "Restore");
+        pool.execute(restoreThread);
     }
 
     public void delete() {

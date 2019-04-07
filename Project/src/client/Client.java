@@ -17,9 +17,10 @@ class Client {
 
         locatePeer(args[0]);
         String operation = args[1];
+        
         switch (operation) {
         case "BACKUP":
-            if (args.length < 4) {
+            if (args.length != 4) {
                 System.out.println("Invalid Number of arguments");
             }
             int replicationDegree = Integer.parseInt(args[3]);
@@ -31,7 +32,7 @@ class Client {
             }
             break;
         case "RESTORE":
-            if (args.length < 3) {
+            if (args.length != 3) {
                 System.out.println("Invalid Number of arguments");
             }
             try{
@@ -94,13 +95,17 @@ class Client {
            e.printStackTrace();
         }
         
-        
-
-        
     }
 
     static void restore(String filename) {
-
+    	
+    	try{
+             stub.restore(filename);
+         }
+         catch(RemoteException e){
+            e.printStackTrace();
+         }
+    	
     }
 
     static void delete(String filename) {

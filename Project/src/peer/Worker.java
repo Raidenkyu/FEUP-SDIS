@@ -3,9 +3,10 @@ package peer;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
-
+import java.io.FileOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import peer.Chunk;
 
@@ -34,13 +35,22 @@ public class Worker implements Runnable {
             byte data[] = this.getFileData(filename);
             System.out.println("Uploading to server...");
 
-            backup(data, filename, replicationDegree);
+            backup(data, replicationDegree);
 
             System.out.println("Finished uploading.");
 
-        } else if (task.equals("delete")) {
-
         } else if (task.equals("restore")) {
+        	
+        	String filename = (String) args[0];
+            byte data[] = this.getFileData(filename);
+            
+            System.out.println("Downloading from server...");
+
+            restore(data, filename);
+
+            System.out.println("Finished downloading.");
+
+        } else if (task.equals("delete")) {
 
         } else if (task.equals("reclaim")) {
 
@@ -57,21 +67,21 @@ public class Worker implements Runnable {
         }
     }
 
-    public void backup(byte[] data, String filename, int replicationDegree) {
+    public void backup(byte[] data, int replicationDegree) {
         byte[] buffer;
-        int numChunks = (int) Math.ceil((double) data.length / peer.chunkSize);
+        int numChunks = (int) Math.ceil((double) data.length / Peer.chunkSize);
 
         String fileId = this.encrypt(data);
 
     	for (int i = 0; i < numChunks; i++) {
-            int bufSize = data.length - i * peer.chunkSize;
-            if (bufSize > peer.chunkSize)
-                bufSize = peer.chunkSize;
+            int bufSize = data.length - i * Peer.chunkSize;
+            if (bufSize > Peer.chunkSize)
+                bufSize = Peer.chunkSize;
 
             buffer = new byte[bufSize];
 
             for (int j = 0; j < bufSize; j++) {
-                buffer[j] = data[i * peer.chunkSize + j];
+                buffer[j] = data[i * Peer.chunkSize + j];
             }
             
             Chunk chunk = new Chunk(buffer,i,fileId,replicationDegree);
@@ -98,9 +108,7 @@ public class Worker implements Runnable {
                         System.out.println("Received Message Header: " + responseHeader);
                 		
                 		if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
-                		{
                 			stored++;
-                		}
                 	}
                 	
                 	deltaTime = (System.nanoTime() - startTime);
@@ -120,8 +128,66 @@ public class Worker implements Runnable {
                    
     }
 
-    public void restore() {
+    public void restore(byte[] data, String filename) {
+        String fileId = this.encrypt(data);
+        byte[] receivedMsg = null, dataBuffer = new byte[data.length];
+        FileOutputStream os;
+        Chunk chunk = new Chunk(null, 0, fileId, 0);
+        
+        try
+        {             
+             int receivedBytes = 0;
 
+         	for (int i = 0; receivedBytes < data.length; i++)
+         	{
+         		chunk.index = i;
+                byte[] msg = this.peer.makeHeader("GETCHUNK", chunk).getBytes();                
+                peer.channels.get("MC").send(msg);
+
+                long startTime = System.nanoTime();
+                long deltaTime = 0;
+                
+                receivedMsg = null;
+                
+                while (deltaTime < 1*1000*1000*1000) { // Keeps polling for 1 second
+                    
+                	receivedMsg = peer.channels.get("MDR").messageQueue.poll();
+                	
+                	if (receivedMsg != null) {
+                		String responseHeader = peer.parseHeader(receivedMsg);
+                		String[] args = responseHeader.split(" +");
+                		
+                        System.out.println("Received Message Header: " + responseHeader);
+                		
+                		if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
+                			break;
+                	}
+                	
+                	deltaTime = (System.nanoTime() - startTime);
+                }
+                
+                if (receivedMsg == null)
+                	System.err.println("Error receiving chunk");
+                
+                byte[] receivedData = peer.parseChunk(receivedMsg);
+                
+        		System.arraycopy(receivedData, 0, dataBuffer, receivedBytes, receivedData.length);
+        		receivedBytes += receivedData.length;
+         	}
+         	
+			File file = new File(filename);
+			file.delete();
+			file.createNewFile();
+			os = new FileOutputStream(file);
+         	
+    		os.write(dataBuffer, 0, dataBuffer.length);
+         	os.close();
+        }
+        catch (IOException e)
+        {
+        	e.printStackTrace();
+        }
+       
     }
 
     public void delete() {
