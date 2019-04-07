@@ -46,7 +46,7 @@ public class PeerChannel implements Runnable {
 
         while (true) // Listen for peers
         {
-            byte[] data = new byte[1000 + peer.chunkSize];
+            byte[] data = new byte[1000 + Peer.chunkSize];
             DatagramPacket packet = new DatagramPacket(data, data.length);
             try {
                 socket.receive(packet);
@@ -107,7 +107,7 @@ public class PeerChannel implements Runnable {
             messageQueue.add(msg.getBytes());
         }
         else if (args[0].equals("GETCHUNK")) {
-        	int senderId = Integer.parseInt(args[2]);
+//        	int senderId = Integer.parseInt(args[2]);
         	String fileId = args[3];
         	int ChunkNo = Integer.parseInt(args[4]);
         	

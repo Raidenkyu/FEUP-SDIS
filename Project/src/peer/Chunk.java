@@ -59,4 +59,9 @@ public class Chunk
     	
         return (fileId.substring(0, limit) + "-" + index);
     }
+    
+    public String key()
+    {
+    	return fileId+index;
+    }
 }
