@@ -12,7 +12,7 @@ public class PeerStorage {
 
 
     public PeerStorage(Peer p){
-        this.storageCapacity = 1000;
+        this.storageCapacity = 1000 * 1000;
         this.usedSpace = 0;
         this.freeSpace = this.storageCapacity;
         this.chunks = new ArrayList<Chunk>();
