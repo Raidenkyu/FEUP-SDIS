@@ -124,7 +124,7 @@ public class PeerChannel implements Runnable {
 			if (chunkNumber >= peer.channels.get("MDR").messageQueue.size())
 			{
 				peer.channels.get("MDR").send(response);
-				System.out.println("Sent chunk:" + chunk);
+				System.out.println("Sent chunk: " + chunk);
 			}
         }
         else if (args[0].equals("DELETE")) {
@@ -147,7 +147,17 @@ public class PeerChannel implements Runnable {
     }
 
     void MDRListener(byte[] packetData) {
+    	 String header = this.peer.parseHeader(packetData);
+         
+         String[] args = header.split(" +");
+         if (args[0].equals("CHUNK")) {
+             int SenderId = Integer.parseInt(args[2]);
 
+             if (peer.id == SenderId) // Initiator peer doesn't recover it's own files
+                 return;
+
+             messageQueue.add(packetData);
+         }
     }
 
     protected void send(byte[] data) {

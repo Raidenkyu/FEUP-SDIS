@@ -153,7 +153,7 @@ public class Worker implements Runnable {
                 
                 receivedMsg = null;
                 
-                while (true) { // Keeps polling for 1 second
+                while (deltaTime < 1*1000*1000*1000) { // Keeps polling for 1 second
                     
                 	receivedMsg = peer.channels.get("MDR").messageQueue.poll();
                 	
@@ -189,7 +189,7 @@ public class Worker implements Runnable {
         		receivedBytes += receivedData.length;
          	}
          	
-			File file = new File(filename);
+			File file = new File(filename+"_new");
 			file.delete();
 			file.createNewFile();
 			os = new FileOutputStream(file);
