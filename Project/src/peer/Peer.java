@@ -29,7 +29,7 @@ public class Peer implements PeerRMI
     
     public static final String CRLF = "\r\n";
 
-    public static int chunkSize = 100;
+    public static int chunkSize = 1000;
     
     public PeerStorage storage;
 
