@@ -1,12 +1,16 @@
 package peer;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 import peer.Chunk;
 
@@ -149,7 +153,7 @@ public class Worker implements Runnable {
                 
                 receivedMsg = null;
                 
-                while (deltaTime < 1*1000*1000*1000) { // Keeps polling for 1 second
+                while (true) { // Keeps polling for 1 second
                     
                 	receivedMsg = peer.channels.get("MDR").messageQueue.poll();
                 	
@@ -163,11 +167,21 @@ public class Worker implements Runnable {
                 			break;
                 	}
                 	
+                	try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                	
                 	deltaTime = (System.nanoTime() - startTime);
                 }
                 
                 if (receivedMsg == null)
+                {
                 	System.err.println("Error receiving chunk");
+                	continue;
+                }
                 
                 byte[] receivedData = peer.parseChunk(receivedMsg);
                 
@@ -195,10 +209,16 @@ public class Worker implements Runnable {
     }
 
     public void reclaim(int space) {
-        long reclaimedSpace = 1000 * space;
-        while(this.peer.storage.getUsedSpace() > reclaimedSpace){
+        long reclaimedSpace = 1000 * space;        
+        Collection<Chunk> chunks = peer.storage.getChunks().values();
+        
+        for (Iterator<Chunk> it = chunks.iterator(); it.hasNext() && this.peer.storage.getUsedSpace() > reclaimedSpace;) {
+        	
+        	Chunk chunk = it.next();
+        	peer.storage.deleteChunk(chunk.key());
+        	chunk.delete(peer.chunkPath.toString(), peer.id);
             //TODO: Mandar msg de Remove do Chunk
-            this.peer.storage.deleteChunk(0);
+
         }
         
         this.peer.storage.setSpace(reclaimedSpace);

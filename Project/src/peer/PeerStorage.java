@@ -1,13 +1,12 @@
 package peer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PeerStorage {
     private long storageCapacity;
     private long usedSpace;
     private long freeSpace;
-    private ArrayList<Chunk> chunks;
+    private ConcurrentHashMap<String, Chunk> chunks;
     private Peer peer;
 
 
@@ -15,12 +14,12 @@ public class PeerStorage {
         this.storageCapacity = 1000;
         this.usedSpace = 0;
         this.freeSpace = this.storageCapacity;
-        this.chunks = new ArrayList<Chunk>();
+        this.chunks = new ConcurrentHashMap<String, Chunk>();
         this.peer = p;
     }
 
 
-    public ArrayList<Chunk> getChunks(){
+    public ConcurrentHashMap<String, Chunk> getChunks(){
         return this.chunks;
     }
 
@@ -36,23 +35,25 @@ public class PeerStorage {
 		this.freeSpace -= chunkSpace;
         this.usedSpace += chunkSpace;
         
-        this.chunks.add(chunk);
+        this.chunks.put(chunk.key(), chunk);
         return true;
     }
 
-    public boolean deleteChunk(int i){
+    public boolean deleteChunk(String key){
 		
-		if(i >= this.chunks.size()){
-			return false;
-        }
-        long chunkSpace = this.chunks.get(i).data.length;
+    	Chunk chunk = this.chunks.remove(key);
+        long chunkSpace = chunk.data.length;
 		
 		// update memory status
 		this.freeSpace += chunkSpace;
         this.usedSpace -= chunkSpace;
         
-        this.chunks.remove(i);
         return true;
+    }
+    
+    public Chunk getChunk(String key)
+    {
+    	return chunks.get(key);
     }
 
     public void setSpace(long reclaimedSpace){
