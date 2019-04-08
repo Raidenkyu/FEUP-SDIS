@@ -29,7 +29,7 @@ public class Peer implements PeerRMI
     
     public static final String CRLF = "\r\n";
 
-    public static int chunkSize = 1000;
+    public static int chunkSize = 64000;
     
     public PeerStorage storage;
 
@@ -47,7 +47,7 @@ public class Peer implements PeerRMI
         this.storage = new PeerStorage(this);
         this.version = version;
 		this.id = Integer.parseInt(id);
-		retrieveChunksFromFiles();
+		// retrieveChunksFromFiles(); NOTE : Not specified in protocol
 
 		this.initPool();
 		this.initChannels();
@@ -74,8 +74,10 @@ public class Peer implements PeerRMI
         pool.execute(restoreThread);
     }
 
-    public void delete() {
-
+    public void delete(String filename) {
+        Object[] args = { filename };
+        Thread deleteThread = new Thread(new Worker("delete", args, this), "Delete");
+        pool.execute(deleteThread);
     }
 
     public void reclaim(int DiskSpace) {

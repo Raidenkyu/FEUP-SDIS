@@ -110,6 +110,12 @@ class Client {
 
     static void delete(String filename) {
 
+        try {
+            stub.delete(filename);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
     }
 
     static void reclaim(int diskSpace) {

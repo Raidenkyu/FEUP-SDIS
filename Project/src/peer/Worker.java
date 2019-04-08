@@ -56,6 +56,15 @@ public class Worker implements Runnable {
 
         } else if (task.equals("delete")) {
 
+            String filename = (String) args[0];
+            byte data[] = this.getFileData(filename);
+
+            System.out.println("Deleting file from server...");
+
+            delete(data, filename);
+
+            System.out.println("Finished deleting.");
+
         } else if (task.equals("reclaim")) {
 
             int space = (Integer) args[0];
@@ -73,7 +82,7 @@ public class Worker implements Runnable {
 
     public void backup(byte[] data, int replicationDegree) {
         byte[] buffer;
-        int numChunks = (int) Math.ceil((double) data.length / Peer.chunkSize);
+        int numChunks = getNumChunks(data.length);
 
         String fileId = this.encrypt(data);
 
@@ -135,14 +144,13 @@ public class Worker implements Runnable {
     public void restore(byte[] data, String filename) {
         String fileId = this.encrypt(data);
         byte[] receivedMsg = null, dataBuffer = new byte[data.length];
-        FileOutputStream os;
         Chunk chunk = new Chunk(null, 0, fileId, 0);
-        
-        try
-        {             
-             int receivedBytes = 0;
+        int numChunks = getNumChunks(data.length);
+        boolean succeeded = true;
 
-         	for (int i = 0; receivedBytes < data.length; i++)
+        try
+        {
+         	for (int i = 0; i < numChunks; i++)
          	{
          		chunk.index = i;
                 byte[] msg = this.peer.makeHeader("GETCHUNK", chunk).getBytes();                
@@ -150,10 +158,11 @@ public class Worker implements Runnable {
 
                 long startTime = System.nanoTime();
                 long deltaTime = 0;
+                int timeout = 2;
                 
                 receivedMsg = null;
                 
-                while (deltaTime < 1*1000*1000*1000) { // Keeps polling for 1 second
+                while (deltaTime < timeout*1000*1000*1000) { // Keeps polling for 1 second
                     
                 	receivedMsg = peer.channels.get("MDR").messageQueue.poll();
                 	
@@ -170,7 +179,6 @@ public class Worker implements Runnable {
                 	try {
 						Thread.sleep(50);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
                 	
@@ -179,23 +187,26 @@ public class Worker implements Runnable {
                 
                 if (receivedMsg == null)
                 {
-                	System.err.println("Error receiving chunk");
+                    System.err.println("Error receiving chunk");
+                    succeeded = false;
                 	continue;
                 }
                 
                 byte[] receivedData = peer.parseChunk(receivedMsg);
                 
         		System.arraycopy(receivedData, 0, dataBuffer, receivedBytes, receivedData.length);
-        		receivedBytes += receivedData.length;
          	}
-         	
-			File file = new File(filename+"_new");
-			file.delete();
-			file.createNewFile();
-			os = new FileOutputStream(file);
-         	
-    		os.write(dataBuffer, 0, dataBuffer.length);
-         	os.close();
+             
+            if (succeeded)
+            {
+                File file = new File(filename + "_new");
+                file.delete();
+                file.createNewFile();
+
+                FileOutputStream os = new FileOutputStream(file);
+                os.write(dataBuffer, 0, dataBuffer.length);
+                os.close();
+            }
         }
         catch (IOException e)
         {
@@ -204,7 +215,12 @@ public class Worker implements Runnable {
        
     }
 
-    public void delete() {
+    public void delete(byte[] data, String filename) {
+        String fileId = this.encrypt(data);
+        Chunk chunk = new Chunk(null, 0, fileId, 0);
+
+        byte[] msg = this.peer.makeHeader("GETCHUNK", chunk).getBytes();
+        peer.channels.get("MC").send(msg);
 
     }
 
@@ -215,9 +231,10 @@ public class Worker implements Runnable {
         for (Iterator<Chunk> it = chunks.iterator(); it.hasNext() && this.peer.storage.getUsedSpace() > reclaimedSpace;) {
         	
         	Chunk chunk = it.next();
-        	peer.storage.deleteChunk(chunk.key());
+            peer.storage.deleteChunk(chunk.key());
+            String msg = this.peer.makeHeader("PUTCHUNK", chunk);
         	chunk.delete(peer.chunkPath.toString(), peer.id);
-            //TODO: Mandar msg de Remove do Chunk
+            peer.channels.get("MC").send(msg.getBytes());
 
         }
         
@@ -271,9 +288,14 @@ public class Worker implements Runnable {
 
     }
 
+    private int getNumChunks(int numBytes)
+    {
+        int numChunks = (int) Math.ceil((double) numBytes / Peer.chunkSize);
 
-    private byte[] makeRmMsg(){
-        return null;
+        if (numBytes % Peer.chunkSize == 0)
+            numChunks++;
+
+        return numChunks;
     }
 
 

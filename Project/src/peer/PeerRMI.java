@@ -9,7 +9,7 @@ public interface PeerRMI extends Remote {
 
     public void restore(String filename) throws RemoteException;
 
-    public void delete() throws RemoteException;
+    public void delete(String filename) throws RemoteException;
 
     public void reclaim(int diskSpace) throws RemoteException;
 

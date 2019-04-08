@@ -143,6 +143,17 @@ public class PeerChannel implements Runnable {
         		peer.storage.deleteChunk(key);
         	}
         }
+        else if(args[0].equals("REMOVED")){
+            
+        	String fileId = args[3];
+            String ChunkNo = args[4];
+            String chunkKey = fileId + ChunkNo;
+            Chunk chunk = this.peer.storage.getChunk(chunkKey);
+            if(chunk != null){
+           
+            }
+
+        }
 
     }
 
