@@ -43,9 +43,9 @@ public class Peer implements PeerRMI
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
-    public Peer(String id){
-
-		this.storage = new PeerStorage(this);
+    public Peer(String version, String id){
+        this.storage = new PeerStorage(this);
+        this.version = version;
 		this.id = Integer.parseInt(id);
 		retrieveChunksFromFiles();
 
@@ -57,7 +57,7 @@ public class Peer implements PeerRMI
 
     public static void main(String[] args)
     {
-        instance = new Peer(args[0]);
+        instance = new Peer(args[0],args[1]);
     }
 
 

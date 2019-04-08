@@ -252,6 +252,7 @@ public class Worker implements Runnable {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedhash = digest.digest(data);
             String fileId = bytesToHex(encodedhash);
+
             return fileId;
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -268,6 +269,11 @@ public class Worker implements Runnable {
         }
         return sb.toString();
 
+    }
+
+
+    private byte[] makeRmMsg(){
+        return null;
     }
 
 
