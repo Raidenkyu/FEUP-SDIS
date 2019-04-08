@@ -242,7 +242,7 @@ public class Peer implements PeerRMI
 			header += " " + chunk.index;
 		
 		if (op.equals("PUTCHUNK"))
-			header += " " + chunk.replicationDegree;
+			header += " " + chunk.desiredReplicationDegree;
 		
         header += " " + CRLF + CRLF;
                         

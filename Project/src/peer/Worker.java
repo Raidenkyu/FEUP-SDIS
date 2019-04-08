@@ -1,16 +1,13 @@
 package peer;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 
 import peer.Chunk;
 
@@ -101,41 +98,42 @@ public class Worker implements Runnable {
             String header = this.peer.makeHeader("PUTCHUNK", chunk);
             byte[] msg = this.peer.makeMsg(header, chunk);                
            
-            for (int tries = 1; tries <= 5; tries++) {
+            for (int tries = 0; tries < 5; tries++) {
             	
                 peer.channels.get("MDB").send(msg);
 
             	int stored = 0;
-                long startTime = System.nanoTime();
+                long startTime = System.currentTimeMillis();
                 long deltaTime = 0;
                 int numSeconds = (int)Math.pow(2, tries);
                 
-                while (stored < replicationDegree && deltaTime < numSeconds*1000*1000*1000) { // Keeps polling for a number of seconds equivalent to the variable tries
+                while (stored < replicationDegree && deltaTime < numSeconds*1000) { // Keeps polling for a number of seconds equivalent to the variable tries
                     
                 	byte[] response = peer.channels.get("MC").messageQueue.poll();
                 	
                 	if (response != null) {
                 		String responseHeader = peer.parseHeader(response);
                 		String[] args = responseHeader.split(" +");
-                		
-                        System.out.println("Received Message Header: " + responseHeader);
-                		
+                		                		
                 		if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
+                		{
+                            System.out.println("Received Message Header: " + responseHeader);
                 			stored++;
+                		}
+                		else
+                			peer.channels.get("MC").messageQueue.add(response);
                 	}
                 	
-                	deltaTime = (System.nanoTime() - startTime);
+                	deltaTime = (System.currentTimeMillis() - startTime);
                 }
                 
                 if (stored == replicationDegree) // Success
                 {
-                	System.out.println("File backed up sucessfully!");
+                	System.out.println("Chunk backed up sucessfully!");
                 	break;
                 }
                 else
-                {
                 	System.out.println("Failed to backup chunk");
-                }
             }
         }
                    
@@ -156,33 +154,27 @@ public class Worker implements Runnable {
                 byte[] msg = this.peer.makeHeader("GETCHUNK", chunk).getBytes();                
                 peer.channels.get("MC").send(msg);
 
-                long startTime = System.nanoTime();
+                long startTime = System.currentTimeMillis();
                 long deltaTime = 0;
                 int timeout = 2;
                 
                 receivedMsg = null;
                 
-                while (deltaTime < timeout*1000*1000*1000) { // Keeps polling for 1 second
+                while (deltaTime < timeout*1000) { // Keeps polling for 1 second
                     
                 	receivedMsg = peer.channels.get("MDR").messageQueue.poll();
                 	
                 	if (receivedMsg != null) {
                 		String responseHeader = peer.parseHeader(receivedMsg);
                 		String[] args = responseHeader.split(" +");
-                		
-                        System.out.println("Received Message Header: " + responseHeader);
-                		
+                		                		
                 		if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
                 			break;
+                		else
+                			peer.channels.get("MDR").messageQueue.add(receivedMsg);
                 	}
                 	
-                	try {
-						Thread.sleep(50);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-                	
-                	deltaTime = (System.nanoTime() - startTime);
+                	deltaTime = (System.currentTimeMillis() - startTime);
                 }
                 
                 if (receivedMsg == null)
@@ -192,9 +184,11 @@ public class Worker implements Runnable {
                 	continue;
                 }
                 
+                System.out.println("Received Message Header: " + peer.parseHeader(receivedMsg));
+                
                 byte[] receivedData = peer.parseChunk(receivedMsg);
                 
-        		System.arraycopy(receivedData, 0, dataBuffer, receivedBytes, receivedData.length);
+        		System.arraycopy(receivedData, 0, dataBuffer, i*Peer.chunkSize, receivedData.length);
          	}
              
             if (succeeded)
@@ -206,6 +200,10 @@ public class Worker implements Runnable {
                 FileOutputStream os = new FileOutputStream(file);
                 os.write(dataBuffer, 0, dataBuffer.length);
                 os.close();
+            }
+            else
+            {
+            	System.err.println("Failed to recover file");
             }
         }
         catch (IOException e)
@@ -219,7 +217,7 @@ public class Worker implements Runnable {
         String fileId = this.encrypt(data);
         Chunk chunk = new Chunk(null, 0, fileId, 0);
 
-        byte[] msg = this.peer.makeHeader("GETCHUNK", chunk).getBytes();
+        byte[] msg = this.peer.makeHeader("DELETE", chunk).getBytes();
         peer.channels.get("MC").send(msg);
 
     }

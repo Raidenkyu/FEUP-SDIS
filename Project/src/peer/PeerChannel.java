@@ -6,6 +6,7 @@ import java.net.MulticastSocket;
 import java.net.InetAddress;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -101,11 +102,19 @@ public class PeerChannel implements Runnable {
 
     void MCListener(byte[] packetData) {
         
-        String msg = new String(packetData);
-        String[] args = msg.split(" +");
+        String header = this.peer.parseHeader(packetData);
+        String[] args = header.split(" +");
 
         if (args[0].equals("STORED")) {
-            messageQueue.add(msg.getBytes());
+        	String fileId = args[3];
+            int ChunkNo = Integer.parseInt(args[4]);
+        	Chunk chunk = peer.storage.getChunk(fileId+ChunkNo);
+        	
+        	if (chunk == null)
+        		messageQueue.add(packetData);
+        	else
+        		chunk.addPeer(args[2]);            
+            
         }
         else if (args[0].equals("GETCHUNK")) {
         	String fileId = args[3];
@@ -159,8 +168,8 @@ public class PeerChannel implements Runnable {
 
     void MDRListener(byte[] packetData) {
     	 String header = this.peer.parseHeader(packetData);
-         
          String[] args = header.split(" +");
+         
          if (args[0].equals("CHUNK")) {
              int SenderId = Integer.parseInt(args[2]);
 
