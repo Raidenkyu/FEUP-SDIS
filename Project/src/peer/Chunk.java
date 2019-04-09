@@ -8,13 +8,13 @@ import java.util.HashSet;
 
 public class Chunk
 {
-    byte[] data;
+    public byte[] data;
 
-    int index;
+    public int index;
 
-    String fileId;
+    public String fileId;
     
-    int desiredReplicationDegree;
+    public int desiredReplicationDegree;
     
     HashSet<String> peerSet;
 

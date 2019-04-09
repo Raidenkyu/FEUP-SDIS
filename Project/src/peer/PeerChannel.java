@@ -121,7 +121,21 @@ public class PeerChannel implements Runnable {
         	Chunk chunk = peer.storage.getChunk(fileId+ChunkNo);
         	
         	if (chunk == null)
-        		messageQueue.add(packetData);
+        	{
+        		for (int i = 0; i < peer.backedChunks.size(); i++)
+        		{
+        			if (peer.backedChunks.get(i).getValue().key().equals(fileId+ChunkNo))
+        			{
+        				chunk = peer.backedChunks.get(i).getValue();
+        				break;
+        			}
+        		}
+        		
+        		if (chunk != null)
+            		chunk.addPeer(args[2]);
+        		
+            	messageQueue.add(packetData);
+        	}
         	else
         	{
         		chunk.addPeer(args[2]);
@@ -140,8 +154,6 @@ public class PeerChannel implements Runnable {
         	
 			byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", chunk), chunk);
 			 
-			int chunkNumber = peer.channels.get("MDR").messageQueue.size();
-
 			Timer timer = new java.util.Timer();
 			timer.schedule( 
 			        new java.util.TimerTask() {

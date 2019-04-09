@@ -2,6 +2,10 @@ package client;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
+
+import javafx.util.Pair;
+import peer.Chunk;
 import peer.PeerRMI;
 import java.rmi.RemoteException;
 
@@ -129,7 +133,20 @@ class Client {
     }
 
     static void state() {
-
+    	
+    	long start = System.currentTimeMillis();
+    	
+    	String info = null;
+    	try{
+    		info = stub.state();
+        }
+        catch(RemoteException e){
+           e.printStackTrace();
+        }
+    	
+    	long deltaTime = System.currentTimeMillis() - start;
+    	
+    	System.out.println(info);
     }
 
     static void locatePeer(String peerName) {

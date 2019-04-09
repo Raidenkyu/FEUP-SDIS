@@ -4,6 +4,9 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,12 +15,15 @@ import java.nio.file.Files;
 import java.io.FileInputStream;
 
 import java.rmi.registry.Registry;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
+
+import javafx.util.Pair;
 
 import peer.Chunk;
 
@@ -32,6 +38,8 @@ public class Peer implements PeerRMI
     public static int chunkSize = 64000;
     
     public PeerStorage storage;
+    
+    protected ArrayList<Pair<String, Chunk>> backedChunks;
 
     ArrayList<String> peers;
 
@@ -45,6 +53,7 @@ public class Peer implements PeerRMI
 
     public Peer(String version, String id){
         this.storage = new PeerStorage(this);
+        backedChunks = new ArrayList<Pair<String, Chunk>>();
         this.version = version;
 		this.id = Integer.parseInt(id);
 		// retrieveChunksFromFiles(); NOTE : Not specified in protocol
@@ -86,8 +95,47 @@ public class Peer implements PeerRMI
         pool.execute(backupThread);
     }
 
-    public void state() {
-        
+    public String state() {
+
+    	String info = "";
+    	
+    	if (backedChunks.size() == 0)
+    		info += "No files were backed up from this peer\n";
+    	else
+    	{
+    		info += "This peer backed up the following files:\n";
+    		
+    		Chunk chunk;
+        	for (int i = 0; i < backedChunks.size(); i++)
+        	{
+        		chunk = backedChunks.get(i).getValue();
+        		if (chunk.index == 0) // Start of a different file
+        		{
+            		info += "\tFile: pathname = " + backedChunks.get(i).getKey() + ", id = " + chunk.fileId + ", desired replication degree = " + chunk.desiredReplicationDegree + "\n";
+        		}
+        		info += "\t\tChunk: id = " + chunk.index + ", perceived replication degree = " + chunk.getActualReplicaitonDegree() + "\n";
+        	}
+    	}
+    	
+    	Set<Map.Entry<String,Chunk>> chunks = storage.getChunks().entrySet();
+    	
+    	if (chunks.size() == 0)
+    		info += "No chunks are stored on this peer\n";
+    	else
+    	{
+    		info += "This peer has the following chunks:\n";
+
+    		Chunk chunk;
+        	for (Map.Entry<String, Chunk> entry : chunks)
+        	{
+        		chunk = entry.getValue();
+        		info += "\tChunk: id = " + chunk.index + ", size = " + chunk.data.length/1000 + "KB, perceived replication degree = " + chunk.getActualReplicaitonDegree() + "\n";
+        	}
+    	}
+    	
+    	info += "This peer has a maximum storage of " + storage.getCapacity()/1000 + "KB and is currently using " + storage.getUsedSpace()/1000 + "KB\n";
+
+    	return info;
     }
 
     public void chunkBackup(Chunk chunk){

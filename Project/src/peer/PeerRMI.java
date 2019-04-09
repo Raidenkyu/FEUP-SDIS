@@ -2,6 +2,9 @@ package peer;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+
+import javafx.util.Pair;
 
 public interface PeerRMI extends Remote {
 
@@ -13,6 +16,6 @@ public interface PeerRMI extends Remote {
 
     public void reclaim(int diskSpace) throws RemoteException;
 
-    public void state() throws RemoteException;
+    public String state() throws RemoteException;
 
 }

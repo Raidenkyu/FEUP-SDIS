@@ -73,5 +73,9 @@ public class PeerStorage {
     public long getUsedSpace(){
         return this.usedSpace;
     }
+    
+    public long getCapacity(){
+        return this.storageCapacity;
+    }
 
 }

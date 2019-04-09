@@ -15,6 +15,8 @@ import peer.Chunk;
 import java.time.Instant;
 import java.util.Random;
 
+import javafx.util.Pair;
+
 public class Worker implements Runnable {
     public String task;
     public Object[] args;
@@ -105,6 +107,9 @@ public class Worker implements Runnable {
             Chunk chunk = new Chunk(buffer, i, fileId, replicationDegree);
             String header = this.peer.makeHeader("PUTCHUNK", chunk);
             byte[] msg = this.peer.makeMsg(header, chunk);
+            
+            chunk.data = null;
+            peer.backedChunks.add(new Pair<String, Chunk>(filename, chunk));
 
             for (int tries = 0; tries < 5; tries++) {
 
@@ -115,9 +120,7 @@ public class Worker implements Runnable {
                 long deltaTime = 0;
                 int numSeconds = (int) Math.pow(2, tries);
 
-                while (stored < replicationDegree && deltaTime < numSeconds * 1000) { // Keeps polling for a number of
-                                                                                      // seconds equivalent to the
-                                                                                      // variable tries
+                while (stored < replicationDegree && deltaTime < numSeconds * 1000) { // Keeps polling for a number of seconds equivalent to the variable tries
 
                     byte[] response = peer.channels.get("MC").messageQueue.poll();
 
@@ -137,6 +140,29 @@ public class Worker implements Runnable {
 
                 if (stored == replicationDegree) // Success
                 {
+                	System.out.println("Chunk backed up sucessfully!");	
+                 	break;	
+                }	
+                else	
+                {	
+        			succeeded = false;	
+                	System.err.print("Failed to backup chunk");	
+                	if (tries < 4)	
+                		System.err.println(", retrying with " + (int)Math.pow(2, tries+1) + " seconds.");	
+                	else
+                	{
+                		for (int j = 0; j < peer.backedChunks.size(); j++)
+                		{
+                			if (peer.backedChunks.get(j).getValue().equals(chunk))
+                			{
+                				peer.backedChunks.remove(j);
+                				break;
+                			}
+                		}
+                		
+                		System.err.println(", giving up.");	
+                	}
+                }
 
             }
         }
@@ -144,8 +170,9 @@ public class Worker implements Runnable {
     	    	
     	if (succeeded)
             System.out.println("Uploaded " + filename + " successfully.");
-    	else
+       	else
     		System.out.println("Failed to upload " + filename + ".");
+        
     }
 
     public void restore(byte[] data, String filename) {
@@ -256,10 +283,6 @@ public class Worker implements Runnable {
 
     }
 
-    public void state() {
-
-    }
-
     public void chunkBackup(Chunk chunk) {
 
         this.waitUniformely();
@@ -281,9 +304,7 @@ public class Worker implements Runnable {
             long deltaTime = 0;
             int numSeconds = (int) Math.pow(2, tries);
 
-            while (stored < chunk.desiredReplicationDegree && deltaTime < numSeconds * 1000) { // Keeps polling for a number of
-                                                                                  // seconds equivalent to the
-                                                                                  // variable tries
+            while (stored < chunk.desiredReplicationDegree && deltaTime < numSeconds * 1000) { // Keeps polling for a number of seconds equivalent to the variable tries
 
                 byte[] response = peer.channels.get("MC").messageQueue.poll();
 
