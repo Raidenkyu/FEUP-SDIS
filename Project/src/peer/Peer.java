@@ -90,6 +90,12 @@ public class Peer implements PeerRMI
         
     }
 
+    public void chunkBackup(Chunk chunk){
+        Object[] args = {chunk};
+        Thread chunkBackupThread = new Thread(new Worker("chunkBackup", args, this), "chunkBackup");
+        pool.execute(chunkBackupThread);
+    }
+
     public void initChannels(){
         PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0",this);
         PeerChannel MC = new PeerChannel("MC", "226.0.0.0",this);
