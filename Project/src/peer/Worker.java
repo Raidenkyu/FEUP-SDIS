@@ -34,22 +34,15 @@ public class Worker implements Runnable {
             String filename = (String) args[0];
             int replicationDegree = (Integer) args[1];
             byte data[] = this.getFileData(filename);
-            System.out.println("Uploading to server...");
 
             backup(data, replicationDegree);
-
-            System.out.println("Finished uploading.");
 
         } else if (task.equals("restore")) {
         	
         	String filename = (String) args[0];
             byte data[] = this.getFileData(filename);
             
-            System.out.println("Downloading from server...");
-
             restore(data, filename);
-
-            System.out.println("Finished downloading.");
 
         } else if (task.equals("delete")) {
 
@@ -80,8 +73,11 @@ public class Worker implements Runnable {
     public void backup(byte[] data, int replicationDegree) {
         byte[] buffer;
         int numChunks = getNumChunks(data.length);
-
         String fileId = this.encrypt(data);
+        boolean succeeded = true;
+        String filename = (String) args[0];
+        
+        System.out.println("Uploading " + filename + " to server...");
 
     	for (int i = 0; i < numChunks; i++) {
             int bufSize = data.length - i * Peer.chunkSize;
@@ -133,10 +129,21 @@ public class Worker implements Runnable {
                 	break;
                 }
                 else
-                	System.out.println("Failed to backup chunk");
+                {
+        			succeeded = false;
+                	System.err.println("Failed to backup chunk");
+                	if (tries < 4)
+                		System.err.println(", retrying with " + (int)Math.pow(2, tries+1) + " seconds.");
+                	else
+                		System.err.println(", giving up.");
+                }
             }
         }
-                   
+    	    	
+    	if (succeeded)
+            System.out.println("Uploaded " + filename + " successfully.");
+    	else
+    		System.out.println("Failed to upload " + filename + ".");
     }
 
     public void restore(byte[] data, String filename) {
@@ -145,6 +152,8 @@ public class Worker implements Runnable {
         Chunk chunk = new Chunk(null, 0, fileId, 0);
         int numChunks = getNumChunks(data.length);
         boolean succeeded = true;
+        
+        System.out.println("Downloading " + filename + " from server...");
 
         try
         {
@@ -193,17 +202,24 @@ public class Worker implements Runnable {
              
             if (succeeded)
             {
-                File file = new File(filename + "_new");
+            	String filepath = peer.chunkPath + File.separator + "peer" + peer.id + File.separator + "restore" + File.separator;
+                File file = new File(filepath);
+                file.mkdirs();
+                
+                filepath += filename;
+                file = new File(filepath);
                 file.delete();
                 file.createNewFile();
 
                 FileOutputStream os = new FileOutputStream(file);
                 os.write(dataBuffer, 0, dataBuffer.length);
                 os.close();
+                
+                System.out.println("Downloaded " + filename + " successfully.");
             }
             else
             {
-            	System.err.println("Failed to recover file");
+            	System.err.println("Failed to download " + filename + ".");
             }
         }
         catch (IOException e)

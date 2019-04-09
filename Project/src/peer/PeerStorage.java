@@ -24,6 +24,10 @@ public class PeerStorage {
     }
 
     public boolean addChunk(Chunk chunk){
+    	
+    	if (chunks.contains(chunk))
+    		return true;
+    	
         long chunkSpace = chunk.data.length;
 		
 		if(chunkSpace > this.freeSpace){
@@ -42,6 +46,10 @@ public class PeerStorage {
     public boolean deleteChunk(String key){
 		
     	Chunk chunk = this.chunks.remove(key);
+    	
+    	if (chunk == null)
+    		return false;
+    	
         long chunkSpace = chunk.data.length;
 		
 		// update memory status

@@ -39,7 +39,7 @@ public class Peer implements PeerRMI
 
     ConcurrentHashMap<String, PeerChannel> channels;
 
-    Path chunkPath = Paths.get(System.getProperty("user.dir"));
+    String chunkPath = Paths.get(System.getProperty("user.dir")).toString();
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
@@ -140,7 +140,7 @@ public class Peer implements PeerRMI
     {
         String fileId;
         int chunkIndex;
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(chunkPath)) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(chunkPath))) {
             for (Path child : dirStream) {
                 
                 String pathStr = child.toString();                

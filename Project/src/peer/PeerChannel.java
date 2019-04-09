@@ -6,11 +6,11 @@ import java.net.MulticastSocket;
 import java.net.InetAddress;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.time.Instant;
+import java.util.Timer;
 
 
 public class PeerChannel implements Runnable {
@@ -50,6 +50,7 @@ public class PeerChannel implements Runnable {
         {
             byte[] data = new byte[1000 + Peer.chunkSize];
             DatagramPacket packet = new DatagramPacket(data, data.length);
+            
             try {
                 socket.receive(packet);
             } catch (IOException e) {
@@ -86,18 +87,27 @@ public class PeerChannel implements Runnable {
             byte[] data = this.peer.parseChunk(packetData);
             
             Chunk chunk = new Chunk(data, ChunkNo, fileId, ReplicationDeg);
-            peer.storage.addChunk(chunk);
-            chunk.store(peer.chunkPath.toString(), peer.id);
+            
+            if (peer.storage.addChunk(chunk))
+            	chunk.store(peer.chunkPath.toString(), peer.id);
             
             System.out.println("Stored chunk: " + chunk);
             
             String response = peer.makeHeader("STORED", chunk);
             
-            waitUniformely();
-
-            peer.channels.get("MC").send(response.getBytes());
+            Timer timer =  new java.util.Timer();
+            timer.schedule( 
+			        new java.util.TimerTask() {
+			            @Override
+			            public void run() {
+			            	 peer.channels.get("MC").send(response.getBytes());
+			            	 
+			            	 this.cancel();
+			            }
+			        }, 
+			        getUniformWait() 
+			);
         }
-
     }
 
     void MCListener(byte[] packetData) {
@@ -131,13 +141,44 @@ public class PeerChannel implements Runnable {
 			byte[] response = peer.makeMsg(peer.makeHeader("CHUNK", chunk), chunk);
 			 
 			int chunkNumber = peer.channels.get("MDR").messageQueue.size();
-			waitUniformely();
-			 
-			if (chunkNumber >= peer.channels.get("MDR").messageQueue.size())
-			{
-				peer.channels.get("MDR").send(response);
-				System.out.println("Sent chunk: " + chunk);
-			}
+
+			Timer timer = new java.util.Timer();
+			timer.schedule( 
+			        new java.util.TimerTask() {
+			            @Override
+			            public void run() {
+			            	
+			            	boolean shouldSend = true;
+			            	for (int i = 0; i < peer.channels.get("MDR").messageQueue.size(); i++)
+			            	{
+			            		byte[] msg = peer.channels.get("MDR").messageQueue.poll();
+			            		String[] args = peer.parseHeader(msg).split(" +");
+			            		
+			            		String fileId2 = args[3];
+			                    int ChunkNo2 = Integer.parseInt(args[4]);
+			            		
+			            		if (fileId2.equals(fileId) && ChunkNo2 == ChunkNo)
+			            		{
+			            			shouldSend = false;
+			            			break;
+			            		}
+			            		else
+			            		{
+			            			peer.channels.get("MDR").messageQueue.add(msg);
+			            		}
+			            	}
+			            	
+			            	if (shouldSend)
+			            	{
+			    				peer.channels.get("MDR").send(response);
+			    				System.out.println("Sent chunk: " + chunk);
+			            	}
+			            	
+			            	this.cancel();
+			            }
+			        }, 
+			        getUniformWait()
+			);			
         }
         else if (args[0].equals("DELETE")) {
             String fileId = args[3], key;
@@ -205,6 +246,12 @@ public class PeerChannel implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+    
+    private int getUniformWait()
+    {
+    	 Random random = new Random(Instant.now().toEpochMilli());
+         return random.nextInt(400);
     }
 
 
