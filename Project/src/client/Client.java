@@ -4,7 +4,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 
-import javafx.util.Pair;
 import peer.Chunk;
 import peer.PeerRMI;
 import java.rmi.RemoteException;

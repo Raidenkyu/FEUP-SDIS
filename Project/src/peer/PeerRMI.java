@@ -4,8 +4,6 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 
-import javafx.util.Pair;
-
 public interface PeerRMI extends Remote {
 
     public void backup(String filename, int degree) throws RemoteException;
