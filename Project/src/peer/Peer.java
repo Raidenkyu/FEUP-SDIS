@@ -4,8 +4,12 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +18,6 @@ import java.nio.file.Files;
 import java.io.FileInputStream;
 
 import java.rmi.registry.Registry;
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
@@ -53,11 +56,12 @@ public class Peer implements PeerRMI
         backedChunks = new ArrayList<Pair<String, Chunk>>();
         this.version = version;
 		this.id = Integer.parseInt(id);
-		// retrieveChunksFromFiles(); NOTE : Not specified in protocol
-
+		
 		this.initPool();
 		this.initChannels();
 		this.initRMI();
+		this.retrieveChunksFromFiles(); // NOTE : Not specified in protocol
+		this.checkDeletedChunks(); // DELETE Enhancement
 
     }
 
@@ -88,7 +92,7 @@ public class Peer implements PeerRMI
 
     public void reclaim(int DiskSpace) {
         Object[] args = {DiskSpace};
-        Thread backupThread = new Thread(new Worker("backup",args,this),"Backup");
+        Thread backupThread = new Thread(new Worker("reclaim",args,this),"Reclaim");
         pool.execute(backupThread);
     }
 
@@ -137,7 +141,7 @@ public class Peer implements PeerRMI
 
     public void chunkBackup(Chunk chunk){
         Object[] args = {chunk};
-        Thread chunkBackupThread = new Thread(new Worker("chunkBackup", args, this), "chunkBackup");
+        Thread chunkBackupThread = new Thread(new Worker("chunkBackup", args, this), "ChunkBackup");
         pool.execute(chunkBackupThread);
     }
 
@@ -177,7 +181,7 @@ public class Peer implements PeerRMI
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry();
             String RMIName = "Peer" + this.id;
-            registry.bind(RMIName, stub);
+            registry.rebind(RMIName, stub);
 
             System.out.println("Server ready");
         } catch (Exception e) {
@@ -269,6 +273,67 @@ public class Peer implements PeerRMI
         {
             e.printStackTrace();
         }
+    }
+    
+    private void checkDeletedChunks()
+    {
+    	Chunk chunk;
+    	byte[] msg;
+    	Collection<Chunk> chunks = storage.getChunks().values();
+        HashSet<String> missingFileIds = new HashSet<String>();
+
+        for (Iterator<Chunk> it = chunks.iterator(); it.hasNext();)
+        {
+            chunk = it.next();
+            
+            if (missingFileIds.add(chunk.fileId)) // Only one message for each distinct FileId
+            {
+            	String msgString = makeHeader("GETINITIATOR", chunk);
+                msg = msgString.getBytes();
+                
+                channels.get("MC").send(msg);
+            }
+        }
+        
+        
+        
+        Timer timer =  new java.util.Timer();
+        timer.schedule( 
+		        new java.util.TimerTask() {
+		            @Override
+		            public void run() {
+		            	
+		            	for (Iterator<byte[]> it = channels.get("MC").messageQueue.iterator(); it.hasNext() ;)
+		            	{
+		            		byte[] msg = it.next();
+		            		String[] args = parseHeader(msg).split(" +");
+		            		
+		            		String fileId = args[3];
+		            		
+		            		if (args[0].equals("INITIATOR") && missingFileIds.remove(fileId))
+		            			it.remove();
+		            	}
+		            	
+		            	Chunk currChunk;
+		            	
+						for (Iterator<Chunk> it = chunks.iterator(); it.hasNext();)
+						{
+							currChunk = it.next();
+						     
+							if (missingFileIds.contains(currChunk.fileId))
+							{
+								System.out.println("Removed deleted chunk " + currChunk);
+								
+								currChunk.delete(chunkPath.toString(), id);
+								storage.deleteChunk(currChunk.key());
+							}
+						}
+
+		            	this.cancel();
+		            }
+		        }, 
+		        1000
+		);
     }
     
     
