@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.time.Instant;
 import java.util.Random;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class Worker implements Runnable {
     public String task;
     public boolean enhanced = false;
@@ -186,6 +188,14 @@ public class Worker implements Runnable {
     }
 
     public void restore(byte[] data, String filename) {
+        ConcurrentLinkedQueue<byte[]> messageQueue = null;
+        if(this.enhanced){
+            this.peer.launchTCPServer();
+            messageQueue = this.peer.tcp.messageQueue;
+        }
+        else{
+            messageQueue = this.peer.channels.get("MDR").messageQueue;
+        }
         String fileId = this.encrypt(data);
         byte[] receivedMsg = null, dataBuffer = new byte[data.length];
         Chunk chunk = new Chunk(null, 0, fileId, 0);
@@ -208,7 +218,7 @@ public class Worker implements Runnable {
 
                 while (deltaTime < timeout * 1000) { // Keeps polling for 1 second
 
-                    receivedMsg = peer.channels.get("MDR").messageQueue.poll();
+                    messageQueue.poll();
 
                     if (receivedMsg != null) {
                         String responseHeader = peer.parseHeader(receivedMsg);
@@ -217,7 +227,7 @@ public class Worker implements Runnable {
                         if (args[3].equals(fileId) && Integer.parseInt(args[4]) == i)
                             break;
                         else
-                            peer.channels.get("MDR").messageQueue.add(receivedMsg);
+                            messageQueue.add(receivedMsg);
                     }
 
                     deltaTime = (System.currentTimeMillis() - startTime);

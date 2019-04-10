@@ -46,7 +46,7 @@ public class Peer implements PeerRMI
     ThreadPoolExecutor pool;
 
     ConcurrentHashMap<String, PeerChannel> channels;
-
+    TCPChannel tcp;
     String chunkPath = Paths.get(System.getProperty("user.dir")).toString();
 
     private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
@@ -364,6 +364,7 @@ public class Peer implements PeerRMI
                         
         return header;
     }
+
     
     protected String parseHeader(byte[] packetData){
         String header = "";
@@ -388,5 +389,15 @@ public class Peer implements PeerRMI
         dataIndex += 2*CRLF.length();
         byte[] chunkData = Arrays.copyOfRange(packetData, dataIndex, packetData.length);
         return chunkData;
+    }
+
+
+    public void launchTCPServer(){
+        TCPChannel tcpChannel = new TCPChannel(this);
+
+        Thread TCPThread = new Thread(tcpChannel, "MDR");
+
+        TCPThread.start();
+        this.tcp = tcpChannel;
     }
 }
