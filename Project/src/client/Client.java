@@ -132,9 +132,7 @@ class Client {
     }
 
     static void state() {
-    	
-    	long start = System.currentTimeMillis();
-    	
+    	    	
     	String info = null;
     	try{
     		info = stub.state();
@@ -142,9 +140,7 @@ class Client {
         catch(RemoteException e){
            e.printStackTrace();
         }
-    	
-    	long deltaTime = System.currentTimeMillis() - start;
-    	
+    	    	
     	System.out.println(info);
     }
 

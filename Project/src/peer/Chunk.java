@@ -1,13 +1,15 @@
 package peer;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.ObjectOutputStream;
 import java.util.HashSet;
 
-public class Chunk
+public class Chunk implements java.io.Serializable
 {
+	private static final long serialVersionUID = 2137262961259471L;
+
     public byte[] data;
 
     public int index;
@@ -33,9 +35,16 @@ public class Chunk
     	try {
     		File file = new File(filepath);
     		file.mkdirs();
-    		filepath += "chk" + index;
     		
-    		Files.write(Paths.get(filepath), data);
+    		filepath += "chk" + index;
+    		file = new File(filepath);
+    		    		
+    		FileOutputStream os = new FileOutputStream(file);
+    		ObjectOutputStream oos = new ObjectOutputStream(os);
+    		
+    		oos.writeObject(this);
+    		
+    		oos.close();
             
     	} catch (IOException e) {
             e.printStackTrace();

@@ -1,7 +1,7 @@
 package peer;
 
 import java.io.IOException;
-
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -242,11 +242,25 @@ public class Peer implements PeerRMI
                                                         try {
                                                             File file = new File(child4.toString());
                                                             FileInputStream in = new FileInputStream(file);
-                                                            byte[] data = new byte[(int) file.length()];
-                                                            in.read(data, 0, data.length);
-                                                            in.close();
+                                                            ObjectInputStream ois = new ObjectInputStream(in);
                                                             
-                                                            Chunk chunk = new Chunk(data, chunkIndex, fileId, 1);
+//                                                            byte[] data = new byte[(int) file.length()];
+//                                                            in.read(data, 0, data.length);
+//                                                            in.close();
+//                                                            
+//                                                            Chunk chunk = new Chunk(data, chunkIndex, fileId, 1);
+                                                            
+                                                            Chunk chunk = null;
+                                                            
+                                                            try {
+																chunk = (Chunk)ois.readObject();
+															} catch (ClassNotFoundException e) {
+																// TODO Auto-generated catch block
+																e.printStackTrace();
+															}
+                                                            
+                                                            ois.close();
+                                                            
                                                             this.storage.addChunk(chunk);
 
                                                             System.out.println("Added chunk: " + chunk);
