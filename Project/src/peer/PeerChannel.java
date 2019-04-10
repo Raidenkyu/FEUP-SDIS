@@ -124,9 +124,9 @@ public class PeerChannel implements Runnable {
         	{
         		for (int i = 0; i < peer.backedChunks.size(); i++)
         		{
-        			if (peer.backedChunks.get(i).getValue().key().equals(fileId+ChunkNo))
+        			if (peer.backedChunks.get(i).second.key().equals(fileId+ChunkNo))
         			{
-        				chunk = peer.backedChunks.get(i).getValue();
+        				chunk = peer.backedChunks.get(i).second;
         				break;
         			}
         		}

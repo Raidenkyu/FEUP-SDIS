@@ -9,13 +9,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
 
-import peer.Chunk;
-
-
 import java.time.Instant;
 import java.util.Random;
-
-import javafx.util.Pair;
 
 public class Worker implements Runnable {
     public String task;
@@ -153,7 +148,7 @@ public class Worker implements Runnable {
                 	{
                 		for (int j = 0; j < peer.backedChunks.size(); j++)
                 		{
-                			if (peer.backedChunks.get(j).getValue().equals(chunk))
+                			if (peer.backedChunks.get(j).second.equals(chunk))
                 			{
                 				peer.backedChunks.remove(j);
                 				break;

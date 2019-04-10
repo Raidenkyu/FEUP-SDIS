@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.io.File;
@@ -22,8 +21,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
-
-import javafx.util.Pair;
 
 import peer.Chunk;
 
@@ -108,10 +105,10 @@ public class Peer implements PeerRMI
     		Chunk chunk;
         	for (int i = 0; i < backedChunks.size(); i++)
         	{
-        		chunk = backedChunks.get(i).getValue();
+        		chunk = backedChunks.get(i).second;
         		if (chunk.index == 0) // Start of a different file
         		{
-            		info += "\tFile: pathname = " + backedChunks.get(i).getKey() + ", id = " + chunk.fileId + ", desired replication degree = " + chunk.desiredReplicationDegree + "\n";
+            		info += "\tFile: pathname = " + backedChunks.get(i).first + ", id = " + chunk.fileId + ", desired replication degree = " + chunk.desiredReplicationDegree + "\n";
         		}
         		info += "\t\tChunk: id = " + chunk.index + ", perceived replication degree = " + chunk.getActualReplicaitonDegree() + "\n";
         	}
