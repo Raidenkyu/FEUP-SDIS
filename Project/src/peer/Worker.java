@@ -14,6 +14,7 @@ import java.util.Random;
 
 public class Worker implements Runnable {
     public String task;
+    public boolean enhanced = false;
     public Object[] args;
 
     public Peer peer = null;
@@ -27,6 +28,17 @@ public class Worker implements Runnable {
         }
 
         this.peer = peer;
+    }
+
+    public Worker(String task, Object[] args, Peer peer, boolean enh) {
+        this.task = task;
+
+        this.args = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            this.args[i] = args[i];
+        }
+        this.peer = peer;
+        this.enhanced = enh;
     }
 
     @Override

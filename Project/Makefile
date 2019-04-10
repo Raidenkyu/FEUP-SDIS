@@ -15,7 +15,8 @@ SERVERCLASSES = \
 	src/peer/PeerRMI.java \
 	src/peer/Worker.java \
 	src/peer/PeerChannel.java \
-	src/peer/PeerStorage.java
+	src/peer/PeerStorage.java \
+	src/peer/TCPChannel.java
  
 default: classes
  
