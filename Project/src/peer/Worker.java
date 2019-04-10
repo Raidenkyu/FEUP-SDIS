@@ -116,7 +116,8 @@ public class Worker implements Runnable {
             byte[] msg = this.peer.makeMsg(header, chunk);
             
             chunk.data = null;
-            peer.backedChunks.add(new Pair<String, Chunk>(filename, chunk));
+            Pair<String, Chunk> pair = new Pair<String, Chunk>(filename, chunk);
+            peer.backedChunks.add(pair);
 
             for (int tries = 0; tries < 5; tries++) {
 
@@ -167,7 +168,9 @@ public class Worker implements Runnable {
                 			}
                 		}
                 		
-                		System.err.println(", giving up.");	
+                		System.err.println(", giving up.");
+                		
+                		peer.backedChunks.remove(pair);
                 	}
                 }
 
@@ -265,10 +268,18 @@ public class Worker implements Runnable {
     public void delete(byte[] data, String filename) {
         String fileId = this.encrypt(data);
         Chunk chunk = new Chunk(null, 0, fileId, 0);
+        
+        for (int i = 0; i < peer.backedChunks.size(); i++)
+        {
+        	if (peer.backedChunks.get(i).first.equals(filename))
+        	{
+        		peer.backedChunks.remove(i);
+        		i--;
+        	}
+        }
 
         byte[] msg = this.peer.makeHeader("DELETE", chunk).getBytes();
         peer.channels.get("MC").send(msg);
-
     }
 
     public void reclaim(int space) {

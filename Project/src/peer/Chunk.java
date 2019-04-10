@@ -47,6 +47,12 @@ public class Chunk
     	String filepath = chunkPath + File.separator + "peer" + peerId + File.separator + "backup" + File.separator + fileId + File.separator + "chk" + index;
     	File file = new File(filepath);
     	file.delete();
+    	
+    	filepath = chunkPath + File.separator + "peer" + peerId + File.separator + "backup" + File.separator + fileId + File.separator;
+    	file = new File(filepath);
+    	
+    	if (file.listFiles().length == 0)
+    		file.delete();
     }
     
     public void addPeer(String peerId)

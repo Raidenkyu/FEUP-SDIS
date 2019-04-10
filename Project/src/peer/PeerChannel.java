@@ -6,6 +6,8 @@ import java.net.MulticastSocket;
 import java.net.InetAddress;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -175,9 +177,7 @@ public class PeerChannel implements Runnable {
 			            			break;
 			            		}
 			            		else
-			            		{
-			            			peer.channels.get("MDR").messageQueue.add(msg);
-			            		}
+			            			peer.channels.get("MDR").messageQueue.add(msg);			            	
 			            	}
 			            	
 			            	if (shouldSend)
@@ -193,22 +193,26 @@ public class PeerChannel implements Runnable {
 			);			
         }
         else if (args[0].equals("DELETE")) {
-            String fileId = args[3], key;
+            String fileId = args[3];
             Chunk chunk;
             
-            for (int i = 0; ; i++) {
-            		
-            	key = fileId+i;
-        		chunk = peer.storage.getChunk(key);
-        		
-        		if (chunk == null)
-        			break;
-        		
-        		chunk.delete(peer.chunkPath.toString(), peer.id);
-        		peer.storage.deleteChunk(key);
-        	}
+            Collection<Chunk> chunks = peer.storage.getChunks().values();
+
+            for (Iterator<Chunk> it = chunks.iterator(); it.hasNext();)
+            {
+                chunk = it.next();
+                
+                if (chunk.fileId.equals(fileId))
+                {
+					System.out.println("Removed deleted chunk " + chunk);
+
+					chunk.delete(peer.chunkPath.toString(), peer.id);
+            		peer.storage.deleteChunk(chunk.key());
+                }
+            }
+         
         }
-        else if(args[0].equals("REMOVED")){
+        else if (args[0].equals("REMOVED")){
             String senderId = args[2];
         	String fileId = args[3];
             String ChunkNo = args[4];
@@ -222,6 +226,29 @@ public class PeerChannel implements Runnable {
             }
 
         }
+        else if (args[0].equals("GETINITIATOR")) { // Checks if the current peer is the one which initiated the specified file's backup, if yes send a message to the MC channel with INITIATOR operation
+        	String fileId = args[3];
+            Chunk chunk = new Chunk(null, 0, fileId, 0);
+            
+            for (int i = 0; i < peer.backedChunks.size(); i++)
+            {
+            	if (peer.backedChunks.get(i).second.fileId.equals(fileId))
+            	{
+                    byte[] msg = peer.makeHeader("INITIATOR", chunk).getBytes();
+                    
+                    peer.channels.get("MC").send(msg);
+                    
+                    break;
+            	}
+            }
+        }
+        else if (args[0].equals("INITIATOR")) {
+        	int senderId = Integer.parseInt(args[2]);
+        	
+        	if (senderId != peer.id)
+        		messageQueue.add(packetData);     
+        }
+        
 
     }
 
