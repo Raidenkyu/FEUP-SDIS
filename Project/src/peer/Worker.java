@@ -218,7 +218,7 @@ public class Worker implements Runnable {
 
                 while (deltaTime < timeout * 1000) { // Keeps polling for 1 second
 
-                    messageQueue.poll();
+                    receivedMsg = messageQueue.poll();
 
                     if (receivedMsg != null) {
                         String responseHeader = peer.parseHeader(receivedMsg);
@@ -271,6 +271,10 @@ public class Worker implements Runnable {
         catch (IOException e)
         {
         	e.printStackTrace();
+        }
+
+        if(this.enhanced){
+            this.peer.tcp.stopServer();
         }
 
     }

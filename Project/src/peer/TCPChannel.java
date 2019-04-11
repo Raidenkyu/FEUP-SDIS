@@ -15,14 +15,16 @@ public class TCPChannel implements Runnable {
     ConcurrentLinkedQueue<byte[]> messageQueue;
 
     Peer peer = null;
+    private boolean running = true;
 
     TCPChannel(Peer peer) {
         this.port = 8081;
         try {
             this.server = new ServerSocket(this.port);
+            
         } catch (IOException e) {
-            System.out.println("Failed to initialize the Server socket");
-            e.printStackTrace();
+            System.out.println("Failed to initialize the Server socket. Try again after a few minutes");
+            this.running = false;
         }
         this.messageQueue = new ConcurrentLinkedQueue<byte[]>();
         this.peer = peer;
@@ -31,7 +33,7 @@ public class TCPChannel implements Runnable {
     @Override
     public void run() {
         Socket socket = null;
-        while (true) {
+        while (running) {
 
             try {
                 socket = this.server.accept();
@@ -48,6 +50,19 @@ public class TCPChannel implements Runnable {
             }
 
 
+        }
+        this.closeSocket();
+    }
+
+    public void stopServer(){
+        running = false;
+    }
+
+    public void closeSocket(){
+        try{
+        this.server.close();
+        }
+        catch(IOException e){
         }
     }
 }

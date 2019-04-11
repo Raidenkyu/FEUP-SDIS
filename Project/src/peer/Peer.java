@@ -61,7 +61,7 @@ public class Peer implements PeerRMI
 		this.initChannels();
 		this.initRMI();
 		this.retrieveChunksFromFiles(); // NOTE : Not specified in protocol
-		this.checkDeletedChunks(); // DELETE Enhancement
+        this.checkDeletedChunks(); // DELETE Enhancement
 
     }
 
