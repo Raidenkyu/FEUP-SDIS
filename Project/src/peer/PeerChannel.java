@@ -140,8 +140,11 @@ public class PeerChannel implements Runnable {
                     chunk.addPeer(args[2]);
 
                 messageQueue.add(packetData);
-            } else {
+            } 
+            else 
+            {
                 chunk.addPeer(args[2]);
+                chunk.update(peer.chunkPath, peer.id);
                 System.out.println("Updated actual replication degree of chunk " + chunk + " to "
                         + chunk.getActualReplicaitonDegree());
             }

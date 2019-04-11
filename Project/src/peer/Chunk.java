@@ -74,6 +74,12 @@ public class Chunk implements java.io.Serializable
     	peerSet.remove(peerId);
     }
     
+    public void update(String chunkPath, int peerId)
+    {
+    	delete(chunkPath, peerId);
+    	store(chunkPath, peerId);
+    }
+    
     public int getActualReplicaitonDegree()
     {
     	return peerSet.size();
