@@ -226,6 +226,7 @@ public class PeerChannel implements Runnable {
             Chunk chunk = this.peer.storage.getChunk(chunkKey);
             if (chunk != null) {
                 chunk.removePeer(senderId);
+                System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
                 if (chunk.getActualReplicaitonDegree() > chunk.desiredReplicationDegree) {
                     this.peer.chunkBackup(chunk);
                 }

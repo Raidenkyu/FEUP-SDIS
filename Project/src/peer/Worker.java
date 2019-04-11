@@ -300,8 +300,9 @@ public class Worker implements Runnable {
                 && this.peer.storage.getUsedSpace() > reclaimedSpace;) {
 
             Chunk chunk = it.next();
+            System.out.println("Chunk " + chunk + " removed");
             peer.storage.deleteChunk(chunk.key());
-            String msg = this.peer.makeHeader("PUTCHUNK", chunk);
+            String msg = this.peer.makeHeader("REMOVED", chunk);
             chunk.delete(peer.chunkPath.toString(), peer.id);
             peer.channels.get("MC").send(msg.getBytes());
 
@@ -315,11 +316,9 @@ public class Worker implements Runnable {
 
         this.waitUniformely();
 
-
         if(chunk.getActualReplicaitonDegree() >= chunk.desiredReplicationDegree){
             return;
         }
-
         String header = this.peer.makeHeader("PUTCHUNK", chunk);
         byte[] msg = this.peer.makeMsg(header, chunk);
 
