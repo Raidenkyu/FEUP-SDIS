@@ -6,11 +6,11 @@ import java.util.ArrayList;
 
 public interface PeerRMI extends Remote {
 
-    public void backup(String filename, int degree) throws RemoteException;
+    public void backup(String filename, int degree, boolean enhanced) throws RemoteException;
 
-    public void restore(String filename) throws RemoteException;
+    public void restore(String filename, boolean enhanced) throws RemoteException;
 
-    public void delete(String filename) throws RemoteException;
+    public void delete(String filename, boolean enhanced) throws RemoteException;
 
     public void reclaim(int diskSpace) throws RemoteException;
 

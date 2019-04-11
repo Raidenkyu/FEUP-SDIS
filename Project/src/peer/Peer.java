@@ -71,22 +71,34 @@ public class Peer implements PeerRMI
     }
 
 
-    public void backup(String fileId, int replicationDegree) {
+    public void backup(String fileId, int replicationDegree, boolean enhanced) {
+        if(enhanced && (this.version.equals("1.0"))){
+            System.out.println("Error: Actual protocol version does not support enhanced implementations");
+            return;
+        }
         Integer degree = replicationDegree;
         Object[] args = {fileId,degree};
-        Thread backupThread = new Thread(new Worker("backup", args, this), "Backup");
+        Thread backupThread = new Thread(new Worker("backup", args, this, enhanced), "Backup");
         pool.execute(backupThread);
     }
 
-    public void restore(String filename) {
+    public void restore(String filename, boolean enhanced) {
+        if(enhanced && (this.version.equals("1.0"))){
+            System.out.println("Error: Actual proctocol version does not support enhanced implementations");
+            return;
+        }
         Object[] args = {filename};
-        Thread restoreThread = new Thread(new Worker("restore", args, this), "Restore");
+        Thread restoreThread = new Thread(new Worker("restore", args, this, enhanced), "Restore");
         pool.execute(restoreThread);
     }
 
-    public void delete(String filename) {
+    public void delete(String filename, boolean enhanced) {
+        if(enhanced && (this.version.equals("1.0"))){
+            System.out.println("Error: Actual protocol version does not support enhanced implementations");
+            return;
+        }
         Object[] args = { filename };
-        Thread deleteThread = new Thread(new Worker("delete", args, this), "Delete");
+        Thread deleteThread = new Thread(new Worker("delete", args, this, enhanced), "Delete");
         pool.execute(deleteThread);
     }
 

@@ -196,6 +196,7 @@ public class PeerChannel implements Runnable {
 
                 dOut.writeInt(response.length);
                 dOut.write(response);
+                socket.close();
                 }
                 catch(IOException e){
                     System.out.println("Unable to connect to server");

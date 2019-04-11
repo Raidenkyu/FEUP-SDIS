@@ -17,10 +17,16 @@ class Client {
             System.out.println("Invalid Number of arguments");
             System.exit(1);
         }
+        boolean enhanced = false;
+
 
         locatePeer(args[0]);
         String operation = args[1];
-        
+        if(operation.contains("ENH")){
+            enhanced = true;
+            operation = operation.substring(0, operation.length()-3);
+        }
+        System.out.println(operation);
         switch (operation) {
         case "BACKUP":
             if (args.length != 4) {
@@ -28,7 +34,7 @@ class Client {
             }
             int replicationDegree = Integer.parseInt(args[3]);
             try{
-            backup(args[2], replicationDegree);
+            backup(args[2], replicationDegree, enhanced);
             }
             catch(Exception e){
                 e.printStackTrace();
@@ -39,7 +45,7 @@ class Client {
                 System.out.println("Invalid Number of arguments");
             }
             try{
-                restore(args[2]);
+                restore(args[2], enhanced);
             }
             catch(Exception e){
                e.printStackTrace();
@@ -52,7 +58,7 @@ class Client {
             }
             
             try{
-                delete(args[2]);
+                delete(args[2], enhanced);
             }
             catch(Exception e){
                e.printStackTrace();
@@ -89,10 +95,10 @@ class Client {
 
     }
 
-    static void backup(String filename, int replicationDegree) {
+    static void backup(String filename, int replicationDegree, boolean enhanced) {
 
         try{
-            stub.backup(filename, replicationDegree);
+            stub.backup(filename, replicationDegree, enhanced);
         }
         catch(RemoteException e){
            e.printStackTrace();
@@ -100,10 +106,10 @@ class Client {
         
     }
 
-    static void restore(String filename) {
+    static void restore(String filename, boolean enhanced) {
     	
     	try{
-             stub.restore(filename);
+             stub.restore(filename, enhanced);
          }
          catch(RemoteException e){
             e.printStackTrace();
@@ -111,10 +117,10 @@ class Client {
     	
     }
 
-    static void delete(String filename) {
+    static void delete(String filename, boolean enhanced) {
 
         try {
-            stub.delete(filename);
+            stub.delete(filename, enhanced);
         } catch (RemoteException e) {
             e.printStackTrace();
         }

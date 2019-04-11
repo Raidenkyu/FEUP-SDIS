@@ -19,7 +19,7 @@ public class TCPChannel implements Runnable {
     TCPChannel(Peer peer) {
         this.port = 8081;
         try {
-            ServerSocket server = new ServerSocket(this.port);
+            this.server = new ServerSocket(this.port);
         } catch (IOException e) {
             System.out.println("Failed to initialize the Server socket");
             e.printStackTrace();
@@ -30,10 +30,6 @@ public class TCPChannel implements Runnable {
 
     @Override
     public void run() {
-
-    }
-
-    private void listen() {
         Socket socket = null;
         while (true) {
 
@@ -53,7 +49,5 @@ public class TCPChannel implements Runnable {
 
 
         }
-
     }
-
 }
