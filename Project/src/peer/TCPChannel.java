@@ -2,6 +2,7 @@ package peer;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.InetSocketAddress;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,11 +21,14 @@ public class TCPChannel implements Runnable {
     TCPChannel(Peer peer) {
         this.port = 8081;
         try {
-            this.server = new ServerSocket(this.port);
-            
+            this.server = new ServerSocket();
+            this.server.setReuseAddress(true);
+            this.server.bind(new InetSocketAddress(this.port));
+
         } catch (IOException e) {
-            System.out.println("Failed to initialize the Server socket. Try again after a few minutes");
             this.running = false;
+            System.out.println("Error: Failed to initiate a TCP Server");
+            e.printStackTrace();
         }
         this.messageQueue = new ConcurrentLinkedQueue<byte[]>();
         this.peer = peer;
@@ -44,25 +48,22 @@ public class TCPChannel implements Runnable {
                     dIn.readFully(data, 0, data.length);
                     this.messageQueue.add(data);
                 }
+                socket.close();
             } catch (IOException e) {
-                System.out.println("Error: Server failed to listen");
-                e.printStackTrace();
             }
 
-
         }
-        this.closeSocket();
     }
 
-    public void stopServer(){
+    public void stopServer() {
         running = false;
+        try {
+            this.server.close();
+            System.out.print("TCP Server successfully closed");
+        } catch (IOException e) {
+            System.out.println("Error: Failed to close TCP Server");
+            e.printStackTrace();
+        }
     }
 
-    public void closeSocket(){
-        try{
-        this.server.close();
-        }
-        catch(IOException e){
-        }
-    }
 }

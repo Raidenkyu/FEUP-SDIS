@@ -191,12 +191,12 @@ public class PeerChannel implements Runnable {
                 }, getUniformWait());
             } else {
                 try{
-                Socket socket = new Socket(IP, 8081);
-                DataOutputStream dOut = new DataOutputStream(socket.getOutputStream());
+                Socket tcpSocket = new Socket(IP, 8081);
+                DataOutputStream dOut = new DataOutputStream(tcpSocket.getOutputStream());
 
                 dOut.writeInt(response.length);
                 dOut.write(response);
-                socket.close();
+                tcpSocket.close();
                 }
                 catch(IOException e){
                     System.out.println("Unable to connect to server");
