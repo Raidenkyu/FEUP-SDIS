@@ -367,7 +367,7 @@ public class Peer implements PeerRMI
 		header += " " + this.id;
 		header += " " + chunk.fileId;
 		
-		if (op.equals("PUTCHUNK") || op.equals("STORED") || op.equals("GETCHUNK") || op.equals("CHUNK") || op.equals("REMOVED"))
+		if (op.equals("PUTCHUNK") || op.equals("STORED") || op.equals("GETCHUNK") || op.equals("CHUNK") || op.equals("REMOVED") || op.equals("REMOVE"))
 			header += " " + chunk.index;
 		
 		if (op.equals("PUTCHUNK"))

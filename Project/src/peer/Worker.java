@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -101,6 +103,8 @@ public class Worker implements Runnable {
         String filename = (String) args[0];
         
         System.out.println("Uploading " + filename + " to server...");
+        
+        long startTotalTime = System.currentTimeMillis();
 
         for (int i = 0; i < numChunks; i++) {
             int bufSize = data.length - i * Peer.chunkSize;
@@ -150,7 +154,7 @@ public class Worker implements Runnable {
 
                 if (stored == replicationDegree) // Success
                 {
-                	System.out.println("Chunk backed up sucessfully!");	
+                	System.out.println("Chunk backed up sucessfully!");
                  	break;	
                 }	
                 else	
@@ -175,19 +179,24 @@ public class Worker implements Runnable {
                 		peer.backedChunks.remove(pair);
                 	}
                 }
-
+                
             }
         }
 
     	    	
     	if (succeeded)
+    	{
             System.out.println("Uploaded " + filename + " successfully.");
+    		System.out.println("Took " + (System.currentTimeMillis() - startTotalTime)/(double)1000 + " seconds");
+    	}
        	else
     		System.out.println("Failed to upload " + filename + ".");
         
     }
 
     public void restore(byte[] data, String filename) {
+    	long startTotalTime = System.currentTimeMillis();
+    	
         ConcurrentLinkedQueue<byte[]> messageQueue = null;
         if(this.enhanced){
             this.peer.launchTCPServer();
@@ -262,6 +271,8 @@ public class Worker implements Runnable {
                 os.close();
                 
                 System.out.println("Downloaded " + filename + " successfully.");
+                
+                System.out.println("Took " + (System.currentTimeMillis() - startTotalTime)/(double)1000 + " seconds.");
             }
             else
             {
@@ -297,6 +308,10 @@ public class Worker implements Runnable {
     }
 
     public void reclaim(int space) {
+    	
+    	if (space == 0)
+    		space = PeerStorage.defaultSize/1000;
+    	
         long reclaimedSpace = 1000 * space;
         Collection<Chunk> chunks = peer.storage.getChunks().values();
 

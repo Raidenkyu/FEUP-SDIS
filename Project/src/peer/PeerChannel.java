@@ -86,32 +86,41 @@ public class PeerChannel implements Runnable {
         }
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
+            String fileId = (String) args[3];
+            int ChunkNo = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
+
 
             if (peer.id == SenderId) // Initiator peer doesn't store its own files
                 return;
-
-            String fileId = (String) args[3];
-            int ChunkNo = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
+            
+            for (int i = 0; i < peer.backedChunks.size(); i++)
+            {
+            	if (peer.backedChunks.get(i).second.key().equals(fileId+ChunkNo))
+            		return;
+            }
+            
             byte[] data = this.peer.parseChunk(packetData);
 
             Chunk chunk = new Chunk(data, ChunkNo, fileId, ReplicationDeg);
 
             if (peer.storage.addChunk(chunk))
-                chunk.store(peer.chunkPath.toString(), peer.id);
+            {
+            	chunk.store(peer.chunkPath.toString(), peer.id);
 
-            System.out.println("Stored chunk: " + chunk);
+                System.out.println("Stored chunk: " + chunk);
 
-            String response = peer.makeHeader("STORED", chunk);
+                String response = peer.makeHeader("STORED", chunk);
 
-            Timer timer = new java.util.Timer();
-            timer.schedule(new java.util.TimerTask() {
-                @Override
-                public void run() {
-                    peer.channels.get("MC").send(response.getBytes());
+                Timer timer = new java.util.Timer();
+                timer.schedule(new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        peer.channels.get("MC").send(response.getBytes());
 
-                    this.cancel();
-                }
-            }, getUniformWait());
+                        this.cancel();
+                    }
+                }, getUniformWait());
+            }
         }
     }
 
@@ -137,7 +146,21 @@ public class PeerChannel implements Runnable {
                 }
 
                 if (chunk != null)
+                {
                     chunk.addPeer(args[2]);
+
+                    if (peer.enhanced())
+                    {
+                    	
+                    	if (chunk.desiredReplicationDegree < chunk.getActualReplicaitonDegree()) // Send removed
+                    	{
+                    		header = peer.makeHeader("REMOVE", chunk);
+                    		header = header.replaceFirst("\r\n\r\n", " " + args[2] + " \r\n\r\n");
+                    		
+                    		peer.channels.get("MC").send(header.getBytes());
+                    	}
+                    }
+                }
 
                 messageQueue.add(packetData);
             } 
@@ -221,6 +244,10 @@ public class PeerChannel implements Runnable {
 
         } else if (args[0].equals("REMOVED")) {
             String senderId = args[2];
+            
+            if (Integer.parseInt(senderId) == peer.id)
+            	return;
+            
             String fileId = args[3];
             String ChunkNo = args[4];
             String chunkKey = fileId + ChunkNo;
@@ -232,6 +259,29 @@ public class PeerChannel implements Runnable {
                     this.peer.chunkBackup(chunk);
                 }
             }
+            else
+            {
+            	boolean found = false;
+            	for (int i = 0; i < peer.backedChunks.size(); i++)
+            	{
+            		chunk = peer.backedChunks.get(i).second;
+            		
+            		if (chunk.key().equals(fileId+ChunkNo))
+            		{
+            			found = true;
+            			break;
+            		}
+            	}
+            	
+            	if (found)
+            	{
+            		chunk.removePeer(senderId);
+                    System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
+            	}
+            	
+            	
+            }
+            
 
         } else if (args[0].equals("GETINITIATOR")) { // Checks if the current peer is the one which initiated the specified file's backup, if yes send a message to the MC channel with INITIATOR operation
             
@@ -260,6 +310,31 @@ public class PeerChannel implements Runnable {
         			messageQueue.add(packetData);
         	}
         	
+        } else if (args[0].equals("REMOVE"))
+        {
+        	if (peer.enhanced())
+        	{
+        		if (!args[1].equals("1.0"))
+        		{
+        			String fileId = args[3];
+        			int ChunkNo = Integer.parseInt(args[4]);
+        			
+        			Chunk chunk = peer.storage.getChunk(fileId + ChunkNo);
+        			        			
+        			if (chunk != null && Integer.parseInt(args[5]) == peer.id)
+        			{
+        				System.out.println("Removed chunk " + chunk);
+
+                        chunk.delete(peer.chunkPath.toString(), peer.id);
+                        peer.storage.deleteChunk(chunk.key());
+                        
+                        String newHeader = peer.makeHeader("REMOVED", chunk);
+                        
+                        peer.channels.get("MC").send(newHeader.getBytes());
+        			}
+        		}
+        		
+        	}
         }
 
     }

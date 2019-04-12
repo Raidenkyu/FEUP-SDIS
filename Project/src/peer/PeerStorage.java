@@ -8,10 +8,11 @@ public class PeerStorage {
     private long freeSpace;
     private ConcurrentHashMap<String, Chunk> chunks;
     private Peer peer;
-
+    
+    public static final int defaultSize = 10*1000*1000;
 
     public PeerStorage(Peer p){
-        this.storageCapacity = 1000 * 1000;
+        this.storageCapacity = defaultSize;
         this.usedSpace = 0;
         this.freeSpace = this.storageCapacity;
         this.chunks = new ConcurrentHashMap<String, Chunk>();
@@ -66,7 +67,7 @@ public class PeerStorage {
 
     public void setSpace(long reclaimedSpace){
         this.storageCapacity = reclaimedSpace;
-        this.freeSpace = reclaimedSpace - this.usedSpace;
+        this.freeSpace = this.storageCapacity - this.usedSpace;
     }
 
 
