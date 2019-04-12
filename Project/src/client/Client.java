@@ -153,7 +153,7 @@ class Client {
     static void locatePeer(String peerName) {
         String RMIName = "Peer" + peerName;
         try {
-            Registry registry = LocateRegistry.getRegistry(null);
+            Registry registry = LocateRegistry.getRegistry("localhost");
             stub = (PeerRMI) registry.lookup(RMIName);
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
