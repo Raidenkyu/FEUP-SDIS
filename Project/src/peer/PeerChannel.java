@@ -233,26 +233,33 @@ public class PeerChannel implements Runnable {
                 }
             }
 
-        } else if (args[0].equals("GETINITIATOR")) { // Checks if the current peer is the one which initiated the
-                                                     // specified file's backup, if yes send a message to the MC channel
-                                                     // with INITIATOR operation
-            String fileId = args[3];
-            Chunk chunk = new Chunk(null, 0, fileId, 0);
+        } else if (args[0].equals("GETINITIATOR")) { // Checks if the current peer is the one which initiated the specified file's backup, if yes send a message to the MC channel with INITIATOR operation
+            
+        	if (peer.enhanced())
+        	{
+        		String fileId = args[3];
+                Chunk chunk = new Chunk(null, 0, fileId, 0);
 
-            for (int i = 0; i < peer.backedChunks.size(); i++) {
-                if (peer.backedChunks.get(i).second.fileId.equals(fileId)) {
-                    byte[] msg = peer.makeHeader("INITIATOR", chunk).getBytes();
+                for (int i = 0; i < peer.backedChunks.size(); i++) {
+                    if (peer.backedChunks.get(i).second.fileId.equals(fileId)) {
+                        byte[] msg = peer.makeHeader("INITIATOR", chunk).getBytes();
 
-                    peer.channels.get("MC").send(msg);
+                        peer.channels.get("MC").send(msg);
 
-                    break;
+                        break;
+                    }
                 }
-            }
+        	}
+        	
         } else if (args[0].equals("INITIATOR")) {
-            int senderId = Integer.parseInt(args[2]);
-
-            if (senderId != peer.id)
-                messageQueue.add(packetData);
+            
+        	if (peer.enhanced())
+        	{
+        		int senderId = Integer.parseInt(args[2]);
+        		if (senderId != peer.id)
+        			messageQueue.add(packetData);
+        	}
+        	
         }
 
     }
@@ -287,15 +294,6 @@ public class PeerChannel implements Runnable {
 
     }
 
-    private void waitUniformely() {
-        Random random = new Random(Instant.now().toEpochMilli());
-        int delay = random.nextInt(400);
-        try {
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
     private int getUniformWait() {
         Random random = new Random(Instant.now().toEpochMilli());
