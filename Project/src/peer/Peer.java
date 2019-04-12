@@ -60,8 +60,10 @@ public class Peer implements PeerRMI
 		this.initPool();
 		this.initChannels();
 		this.initRMI();
-		this.retrieveChunksFromFiles(); // NOTE : Not specified in protocol
-        this.checkDeletedChunks(); // DELETE Enhancement
+		this.retrieveChunksFromFiles();
+		
+		if (this.enhanced())
+			this.checkDeletedChunks(); // DELETE Enhancement
 
     }
 
@@ -73,7 +75,7 @@ public class Peer implements PeerRMI
 
     public void backup(String fileId, int replicationDegree, boolean enhanced) {
         if(enhanced && (this.version.equals("1.0"))){
-            System.out.println("Error: Actual protocol version does not support enhanced implementations");
+            System.out.println("Error: The current protocol version does not support enhanced implementations");
             return;
         }
         Integer degree = replicationDegree;
@@ -84,7 +86,7 @@ public class Peer implements PeerRMI
 
     public void restore(String filename, boolean enhanced) {
         if(enhanced && (this.version.equals("1.0"))){
-            System.out.println("Error: Actual proctocol version does not support enhanced implementations");
+            System.out.println("Error: The current proctocol version does not support enhanced implementations");
             return;
         }
         Object[] args = {filename};
@@ -94,7 +96,7 @@ public class Peer implements PeerRMI
 
     public void delete(String filename, boolean enhanced) {
         if(enhanced && (this.version.equals("1.0"))){
-            System.out.println("Error: Actual protocol version does not support enhanced implementations");
+            System.out.println("Error: The current protocol version does not support enhanced implementations");
             return;
         }
         Object[] args = { filename };
@@ -204,9 +206,7 @@ public class Peer implements PeerRMI
 
 
     private void retrieveChunksFromFiles()
-    {
-        String fileId;
-        int chunkIndex;
+    {        
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(chunkPath))) {
             for (Path child : dirStream) {
                 
@@ -236,8 +236,6 @@ public class Peer implements PeerRMI
                                         if (pos != -1)
                                         	pathStr = pathStr.substring(pos+1);
 
-                                        fileId = pathStr;
-
                                         if (Files.isDirectory(child3)) 
                                         {
                                             try (DirectoryStream<Path> dirStream4 = Files.newDirectoryStream(child3)) {
@@ -249,25 +247,16 @@ public class Peer implements PeerRMI
 
                                                     if (pathStr.matches("chk[0-9]+")) {
 
-                                                        chunkIndex = Integer.parseInt(pathStr.substring(3));
-
                                                         try {
                                                             File file = new File(child4.toString());
                                                             FileInputStream in = new FileInputStream(file);
                                                             ObjectInputStream ois = new ObjectInputStream(in);
-                                                            
-//                                                            byte[] data = new byte[(int) file.length()];
-//                                                            in.read(data, 0, data.length);
-//                                                            in.close();
-//                                                            
-//                                                            Chunk chunk = new Chunk(data, chunkIndex, fileId, 1);
-                                                            
+
                                                             Chunk chunk = null;
                                                             
                                                             try {
 																chunk = (Chunk)ois.readObject();
 															} catch (ClassNotFoundException e) {
-																// TODO Auto-generated catch block
 																e.printStackTrace();
 															}
                                                             
@@ -290,8 +279,6 @@ public class Peer implements PeerRMI
                         }
                     }
                 }
-
-//                System.out.println(child);
             }
 
         }
@@ -301,7 +288,7 @@ public class Peer implements PeerRMI
         }
     }
     
-    private void checkDeletedChunks()
+    private void checkDeletedChunks() // Sends a GETINITIATOR message for every unique fileId loaded from files and expects an INITIATOR message as response from the initiator peer of the backup of that file
     {
     	Chunk chunk;
     	byte[] msg;
@@ -318,7 +305,7 @@ public class Peer implements PeerRMI
                 msg = msgString.getBytes();
                 
                 channels.get("MC").send(msg);
-            }
+            } 
         }
         
         
@@ -425,5 +412,11 @@ public class Peer implements PeerRMI
 
         TCPThread.start();
         this.tcp = tcpChannel;
+    }
+    
+    
+    public boolean enhanced()
+    {
+    	return (!version.equals("1.0"));
     }
 }
