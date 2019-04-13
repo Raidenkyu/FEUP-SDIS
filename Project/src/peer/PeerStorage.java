@@ -32,7 +32,9 @@ public class PeerStorage {
         long chunkSpace = chunk.data.length;
 		
 		if(chunkSpace > this.freeSpace){
-			System.out.println("Operation Failed: Not enough space to store more Chunks");
+			if (Peer.DEBUG)
+				System.out.println("Operation Failed: Not enough space to store more Chunks");
+			
 			return false;
 		}
 		

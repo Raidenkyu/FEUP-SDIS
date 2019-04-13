@@ -84,11 +84,11 @@ public class PeerChannel implements Runnable {
         if (!args[1].equals(this.peer.version)) {
             return;
         }
+        
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
             String fileId = (String) args[3];
             int ChunkNo = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
-
 
             if (peer.id == SenderId) // Initiator peer doesn't store its own files
                 return;
@@ -105,9 +105,11 @@ public class PeerChannel implements Runnable {
 
             if (peer.storage.addChunk(chunk))
             {
+            	chunk.addPeer(new Integer(peer.id).toString());
             	chunk.store(peer.chunkPath.toString(), peer.id);
 
-                System.out.println("Stored chunk: " + chunk);
+                if (Peer.DEBUG)
+                	System.out.println("Stored chunk: " + chunk);
 
                 String response = peer.makeHeader("STORED", chunk);
 
@@ -128,6 +130,7 @@ public class PeerChannel implements Runnable {
 
         String header = this.peer.parseHeader(packetData);
         String[] args = header.split(" +");
+        
         if (!args[1].equals(this.peer.version)) {
             return;
         }
@@ -151,7 +154,6 @@ public class PeerChannel implements Runnable {
 
                     if (peer.enhanced())
                     {
-                    	
                     	if (chunk.desiredReplicationDegree < chunk.getActualReplicaitonDegree()) // Send removed
                     	{
                     		header = peer.makeHeader("REMOVE", chunk);
@@ -163,13 +165,14 @@ public class PeerChannel implements Runnable {
                 }
 
                 messageQueue.add(packetData);
-            } 
+            }
             else 
             {
                 chunk.addPeer(args[2]);
                 chunk.update(peer.chunkPath, peer.id);
-                System.out.println("Updated actual replication degree of chunk " + chunk + " to "
-                        + chunk.getActualReplicaitonDegree());
+                
+                if (Peer.DEBUG)
+                	System.out.println("Updated actual replication degree of chunk " + chunk + " to " + chunk.getActualReplicaitonDegree());
             }
 
         } else if (args[0].equals("GETCHUNK")) {
@@ -206,7 +209,8 @@ public class PeerChannel implements Runnable {
 
                         if (shouldSend) {
                             peer.channels.get("MDR").send(response);
-                            System.out.println("Sent chunk: " + chunk);
+                            if (Peer.DEBUG)
+                            	System.out.println("Sent chunk: " + chunk);
                         }
 
                         this.cancel();
@@ -235,7 +239,9 @@ public class PeerChannel implements Runnable {
                 chunk = it.next();
 
                 if (chunk.fileId.equals(fileId)) {
-                    System.out.println("Removed deleted chunk " + chunk);
+                    
+                	if (Peer.DEBUG)
+                		System.out.println("Removed deleted chunk " + chunk);
 
                     chunk.delete(peer.chunkPath.toString(), peer.id);
                     peer.storage.deleteChunk(chunk.key());
@@ -254,7 +260,10 @@ public class PeerChannel implements Runnable {
             Chunk chunk = this.peer.storage.getChunk(chunkKey);
             if (chunk != null) {
                 chunk.removePeer(senderId);
-                System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
+                
+                if (Peer.DEBUG)
+                	System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
+               
                 if (chunk.getActualReplicaitonDegree() < chunk.desiredReplicationDegree) {
                     this.peer.chunkBackup(chunk);
                 }
@@ -276,7 +285,9 @@ public class PeerChannel implements Runnable {
             	if (found)
             	{
             		chunk.removePeer(senderId);
-                    System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
+                    
+            		if (Peer.DEBUG)
+            			System.out.println("Chunk " + chunk + " actual replication degree=" + chunk.getActualReplicaitonDegree());
             	}
             	
             	
@@ -323,14 +334,15 @@ public class PeerChannel implements Runnable {
         			        			
         			if (chunk != null && Integer.parseInt(args[5]) == peer.id)
         			{
-        				System.out.println("Removed chunk " + chunk);
-
-                        chunk.delete(peer.chunkPath.toString(), peer.id);
-                        peer.storage.deleteChunk(chunk.key());
+                		if (Peer.DEBUG)
+                			System.out.println("Removed chunk " + chunk);
                         
                         String newHeader = peer.makeHeader("REMOVED", chunk);
                         
                         peer.channels.get("MC").send(newHeader.getBytes());
+                        
+                        chunk.delete(peer.chunkPath.toString(), peer.id);
+                        peer.storage.deleteChunk(chunk.key());
         			}
         		}
         		

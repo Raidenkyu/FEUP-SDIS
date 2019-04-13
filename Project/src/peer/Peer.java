@@ -34,6 +34,7 @@ public class Peer implements PeerRMI
     String version = "1.0";
     
     public static final String CRLF = "\r\n";
+    public static final boolean DEBUG = true;
 
     public static int chunkSize = 64000;
     
@@ -48,8 +49,6 @@ public class Peer implements PeerRMI
     ConcurrentHashMap<String, PeerChannel> channels;
     TCPChannel tcp;
     String chunkPath = Paths.get(System.getProperty("user.dir")).toString();
-
-    private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
 
     public Peer(String version, String id){
         this.storage = new PeerStorage(this);
@@ -181,11 +180,6 @@ public class Peer implements PeerRMI
 
     public void initPool(){
         pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-    }
-
-
-    public ConcurrentHashMap<String, String> getMap(){
-        return map;
     }
 
     private void initRMI(){

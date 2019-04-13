@@ -2,9 +2,7 @@ package client;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
 
-import peer.Chunk;
 import peer.PeerRMI;
 import java.rmi.RemoteException;
 
@@ -92,7 +90,9 @@ class Client {
         default:
             System.out.println("Operation not recognised");
         }
-
+        
+        
+        System.exit(0);
     }
 
     static void backup(String filename, int replicationDegree, boolean enhanced) {
