@@ -29,6 +29,7 @@ class Client {
         case "BACKUP":
             if (args.length != 4) {
                 System.out.println("Invalid Number of arguments");
+                System.exit(1);
             }
             int replicationDegree = Integer.parseInt(args[3]);
             try{
@@ -41,6 +42,7 @@ class Client {
         case "RESTORE":
             if (args.length != 3) {
                 System.out.println("Invalid Number of arguments");
+                System.exit(1);
             }
             try{
                 restore(args[2], enhanced);
@@ -53,6 +55,7 @@ class Client {
         case "DELETE":
             if (args.length < 3) {
                 System.out.println("Invalid Number of arguments");
+                System.exit(1);
             }
             
             try{
@@ -65,6 +68,7 @@ class Client {
         case "RECLAIM":
             if (args.length < 3) {
                 System.out.println("Invalid Number of arguments");
+                System.exit(1);
             }
             int diskSpace = Integer.parseInt(args[2]);
             
@@ -78,6 +82,7 @@ class Client {
         case "STATE":
             if (args.length < 2) {
                 System.out.println("Invalid Number of arguments");
+                System.exit(1);
             }
             try{
                 state();
@@ -89,6 +94,7 @@ class Client {
             break;
         default:
             System.out.println("Operation not recognised");
+            System.exit(1);
         }
         
         
