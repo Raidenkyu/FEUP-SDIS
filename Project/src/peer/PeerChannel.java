@@ -36,6 +36,14 @@ public class PeerChannel implements Runnable {
         this.connect();
     }
 
+    public PeerChannel(String id, String multicastGroup, int port, Peer peer) {
+        this.id = id;
+        this.multicastGroup = multicastGroup;
+        this.peer = peer;
+        this.port = port;
+        this.connect();
+    }
+
     public void connect() {
         try {
             socket = new MulticastSocket(port);
@@ -87,7 +95,7 @@ public class PeerChannel implements Runnable {
         
         if (args[0].equals("PUTCHUNK")) {
             int SenderId = Integer.parseInt(args[2]);
-            String fileId = (String) args[3];
+            String fileId = args[3];
             int ChunkNo = Integer.parseInt(args[4]), ReplicationDeg = Integer.parseInt(args[5]);
 
             if (peer.id == SenderId) // Initiator peer doesn't store its own files
@@ -105,7 +113,7 @@ public class PeerChannel implements Runnable {
 
             if (peer.storage.addChunk(chunk))
             {
-            	chunk.addPeer(new Integer(peer.id).toString());
+            	chunk.addPeer(Integer.toString(peer.id));
             	chunk.store(peer.chunkPath.toString(), peer.id);
 
                 if (Peer.DEBUG)

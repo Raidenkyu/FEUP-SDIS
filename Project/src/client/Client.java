@@ -150,8 +150,8 @@ class Client {
     	System.out.println(info);
     }
 
-    static void locatePeer(String peerName) {
-        String RMIName = "Peer" + peerName;
+    static void locatePeer(String accessPoint) {
+        String RMIName = accessPoint;
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
             stub = (PeerRMI) registry.lookup(RMIName);
