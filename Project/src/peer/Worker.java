@@ -395,17 +395,6 @@ public class Worker implements Runnable {
         return numChunks;
     }
 
-
-    private void waitUniformely()
-    {
-        Random random = new Random(Instant.now().toEpochMilli());
-        int delay = random.nextInt(400);
-        try {
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
     
     private int getUniformWait() {
         Random random = new Random(Instant.now().toEpochMilli());

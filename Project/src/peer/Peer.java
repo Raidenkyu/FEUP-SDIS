@@ -42,11 +42,10 @@ public class Peer implements PeerRMI {
 
     protected ArrayList<Pair<String, Chunk>> backedChunks;
 
-    ArrayList<String> peers;
-
     ThreadPoolExecutor pool;
 
     ConcurrentHashMap<String, PeerChannel> channels;
+    
     TCPChannel tcp;
     String chunkPath = Paths.get(System.getProperty("user.dir")).toString();
 
