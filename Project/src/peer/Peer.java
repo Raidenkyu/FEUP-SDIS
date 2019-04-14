@@ -141,16 +141,26 @@ public class Peer implements PeerRMI {
         else {
             info += "This peer backed up the following files:\n";
 
+            HashSet<String> filenames = new HashSet<String>();
             Chunk chunk;
-            for (int i = 0; i < backedChunks.size(); i++) {
-                chunk = backedChunks.get(i).second;
-                if (chunk.index == 0) // Start of a different file
+            for (int i = 0; i < backedChunks.size(); i++) 
+            {                
+                if (filenames.add(backedChunks.get(i).first)) // Start of a different file
                 {
-                    info += "\tFile: pathname = " + backedChunks.get(i).first + ", id = " + chunk.fileId
-                            + ", desired replication degree = " + chunk.desiredReplicationDegree + "\n";
+                	chunk = backedChunks.get(i).second;
+                	
+                    info += "\tFile: pathname = " + backedChunks.get(i).first + ", id = " + chunk.fileId + ", desired replication degree = " + chunk.desiredReplicationDegree + "\n";
+                    
+                    for (int j = 0; j < backedChunks.size(); j++)
+                    {                    	
+                    	if (backedChunks.get(j).first.equals(backedChunks.get(i).first))
+                    	{
+                            chunk = backedChunks.get(j).second;
+                        	info += "\t\tChunk: id = " + chunk.index + ", perceived replication degree = " + chunk.getActualReplicaitonDegree() + "\n";
+                    	}
+                    }
                 }
-                info += "\t\tChunk: id = " + chunk.index + ", perceived replication degree = "
-                        + chunk.getActualReplicaitonDegree() + "\n";
+              
             }
         }
 
@@ -222,7 +232,7 @@ public class Peer implements PeerRMI {
     }
 
     public void initPool() {
-        pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+        pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
     }
 
     private void initRMI() {
