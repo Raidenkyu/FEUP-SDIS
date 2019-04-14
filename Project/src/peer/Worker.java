@@ -286,9 +286,6 @@ public class Worker implements Runnable {
 
     public void reclaim(int space) {
     	
-    	if (space == 0)
-    		space = PeerStorage.defaultSize/1000;
-    	
         long reclaimedSpace = 1000 * space;
         Collection<Chunk> chunks = peer.storage.getChunks().values();
 
