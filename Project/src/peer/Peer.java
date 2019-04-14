@@ -182,8 +182,9 @@ public class Peer implements PeerRMI {
     }
 
     public void initChannels() {
-        PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0", this);
+
         PeerChannel MC = new PeerChannel("MC", "226.0.0.0", this);
+        PeerChannel MDB = new PeerChannel("MDB", "225.0.0.0", this);
         PeerChannel MDR = new PeerChannel("MDR", "227.0.0.0", this);
         Thread dataChannel = new Thread(MDB, "MDB");
         Thread controlChannel = new Thread(MC, "MC");

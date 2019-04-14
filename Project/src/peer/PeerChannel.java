@@ -86,7 +86,9 @@ public class PeerChannel implements Runnable {
 
     void MDBListener(byte[] packetData, String IP) {
         String header = this.peer.parseHeader(packetData);
-        
+        if(header == null){
+            return;
+        }
         String[] args = header.split(" +");
 
         if (!args[1].equals(this.peer.version)) {
@@ -137,6 +139,10 @@ public class PeerChannel implements Runnable {
     void MCListener(byte[] packetData, String IP) {
 
         String header = this.peer.parseHeader(packetData);
+       if(header == null){
+            return;
+        }
+
         String[] args = header.split(" +");
         
         if (!args[1].equals(this.peer.version)) {
@@ -361,6 +367,9 @@ public class PeerChannel implements Runnable {
 
     void MDRListener(byte[] packetData) {
         String header = this.peer.parseHeader(packetData);
+        if(header == null){
+            return;
+        }
         String[] args = header.split(" +");
 
         if (!args[1].equals(this.peer.version)) {
