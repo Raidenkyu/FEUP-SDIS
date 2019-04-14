@@ -212,8 +212,9 @@ public class Peer implements PeerRMI {
     }
 
     public void initChannels(String MCIP, int MCPort, String MDBIP, int MDBPort, String MDRIP, int MDRPort) {
-        PeerChannel MDB = new PeerChannel("MDB", MCIP, MCPort, this);
-        PeerChannel MC = new PeerChannel("MC", MDBIP, MDBPort, this);
+
+        PeerChannel MC = new PeerChannel("MC", MCIP, MCPort, this);
+        PeerChannel MDB = new PeerChannel("MDB", MDBIP, MDBPort, this);
         PeerChannel MDR = new PeerChannel("MDR", MDRIP, MDRPort, this);
         Thread dataChannel = new Thread(MDB, "MDB");
         Thread controlChannel = new Thread(MC, "MC");
